@@ -1,114 +1,332 @@
-const form = document.querySelector('#invoiceForm');
-const fields = [...form.querySelectorAll('input, textarea, select')];
-const currency = value => `INR ${Number(value || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-const text = (id, value, fallback = '-') => { document.querySelector(`#${id}`).textContent = value || fallback; };
-const moneyWords = number => {
-  const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
-  const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
-  const belowThousand = n => n < 20 ? ones[n] : n < 100 ? `${tens[Math.floor(n / 10)]} ${ones[n % 10]}`.trim() : `${ones[Math.floor(n / 100)]} Hundred ${belowThousand(n % 100)}`.trim();
-  const integer = Math.floor(Number(number || 0));
-  if (integer === 0) return 'Rupees Zero Only';
-  const parts = [];
-  const crore = Math.floor(integer / 10000000); const lakh = Math.floor((integer % 10000000) / 100000); const thousand = Math.floor((integer % 100000) / 1000); const rest = integer % 1000;
-  if (crore) parts.push(`${belowThousand(crore)} Crore`); if (lakh) parts.push(`${belowThousand(lakh)} Lakh`); if (thousand) parts.push(`${belowThousand(thousand)} Thousand`); if (rest) parts.push(belowThousand(rest));
-  return `Rupees ${parts.join(' ')} Only`;
-};
-const value = id => document.querySelector(`#${id}`).value.trim();
-const calculate = () => {
-  const freight = Number(value('weight')) * Number(value('rate'));
-  const other = Number(value('otherCharges')) || 0;
-  const discount = Number(value('discount')) || 0;
-  const taxable = Math.max(0, freight + other - discount);
-  const taxRate = Number(value('taxRate')) || 0;
-  const tax = value('taxMode') === 'none' ? 0 : taxable * taxRate / 100;
-  const total = taxable + tax;
-  return { freight, other, discount, taxable, tax, total };
-};
-const update = () => {
-  const totals = calculate();
-  text('previewInvoiceNumber', value('invoiceNumber'));
-  const invoiceDate = value('invoiceDate');
-  text('previewInvoiceDate', invoiceDate ? new Date(`${invoiceDate}T00:00:00`).toLocaleDateString('en-GB').replaceAll('/', '-') : '-');
-  const lrDate = value('lrDate') || invoiceDate;
-  text('previewLrNumber', value('lrNumber')); text('previewLrDate', lrDate ? new Date(`${lrDate}T00:00:00`).toLocaleDateString('en-GB').replaceAll('/', '-') : '-');
-  text('previewCustomerName', value('customerName')); text('previewCustomerAddress', value('customerAddress'));
-  text('previewCustomerGstin', value('customerGstin')); text('previewCustomerState', value('customerState')); text('previewCustomerStateCode', value('customerStateCode')); text('previewConsignor', value('consignor')); text('previewConsignee', value('consignee')); text('previewLoading', value('loadingLocation')); text('previewUnloading', value('unloadingLocation')); text('previewVehicle', value('vehicleNumber')); text('previewPackages', value('packages')); text('previewDescription', value('goodsDescription'));
-  text('previewWeight', Number(value('weight') || 0).toFixed(3)); text('previewRate', Number(value('rate') || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })); text('previewFreight', totals.freight.toLocaleString('en-IN', { maximumFractionDigits: 2 })); text('previewOtherCharges', totals.other.toLocaleString('en-IN', { maximumFractionDigits: 2 })); text('previewTotal', totals.total.toLocaleString('en-IN', { maximumFractionDigits: 2 }));
-  text('previewGrandTotal', `₹ ${totals.total.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`); text('previewWords', moneyWords(totals.total).replace(/^Rupees (.*) Only$/, '$1 Rupees')); text('previewRemarks', value('remarks') || 'NA');
-  text('freightLive', currency(totals.freight)); text('taxableLive', currency(totals.taxable)); text('totalLive', currency(totals.total));
-};
-const serialize = () => Object.fromEntries(fields.map(field => [field.id, field.value]));
-const restore = data => fields.forEach(field => { if (data[field.id] !== undefined) field.value = data[field.id]; });
+const form = document.getElementById('invoiceForm');
+const statusBox = document.getElementById('statusBox');
+const draftBadge = document.getElementById('draftStatus');
+const printButton = document.getElementById('printButton');
+const saveButton = document.getElementById('saveButton');
+const resetButton = document.getElementById('resetButton');
+const clearFormButton = document.getElementById('clearFormButton');
+const fillSampleButton = document.getElementById('fillSampleButton');
+const historyList = document.getElementById('historyList');
+const historyCount = document.getElementById('historyCount');
 const historyKey = 'transbill-invoices';
-const renderHistory = () => {
-  const records = JSON.parse(localStorage.getItem(historyKey) || '[]'); const list = document.querySelector('#historyList'); document.querySelector('#historyCount').textContent = `${records.length} saved`;
-  list.innerHTML = records.length ? records.slice().reverse().map((record, index) => `<div class="history-item"><div><strong>Invoice ${record.invoiceNumber || '-'}</strong><small>${record.customerName || 'No customer'} | ${record.date || 'No date'}</small></div><button type="button" data-history="${records.length - 1 - index}">Load</button></div>`).join('') : '<p class="empty-state">Saved drafts will appear here.</p>';
-  list.querySelectorAll('[data-history]').forEach(button => button.addEventListener('click', () => { restore(records[Number(button.dataset.history)]); update(); window.scrollTo({ top: 0, behavior: 'smooth' }); }));
+
+const fields = Array.from(form.querySelectorAll('input, textarea, select'));
+
+const value = (id) => (document.getElementById(id)?.value || '').trim();
+
+const text = (id, content) => {
+  const el = document.getElementById(id);
+  if (el) el.textContent = content;
 };
-const setToday = () => { const invoiceDate = document.querySelector('#invoiceDate'); if (!invoiceDate.value) invoiceDate.value = new Date().toISOString().slice(0, 10); };
-const startBlankInvoice = () => {
-  fields.forEach(field => { field.value = ''; });
-  document.querySelector('#invoiceDate').value = new Date().toISOString().slice(0, 10);
-  document.querySelector('#lrDate').value = document.querySelector('#invoiceDate').value;
-  document.querySelector('#taxMode').value = 'none';
-  update();
-  document.querySelector('#draftStatus').textContent = 'New invoice';
+
+const currency = (num) =>
+  `INR ${Number(num || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+const moneyWords = (num) => {
+  const n = Math.round(Number(num || 0));
+  if (n <= 0) return 'Zero Rupees Only';
+
+  const ones = [
+    '', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine',
+    'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen',
+    'Seventeen', 'Eighteen', 'Nineteen'
+  ];
+  const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+
+  const convertBelowThousand = (val) => {
+    if (val < 20) return ones[val];
+    if (val < 100) return `${tens[Math.floor(val / 10)]} ${ones[val % 10]}`.trim();
+    return `${ones[Math.floor(val / 100)]} Hundred ${convertBelowThousand(val % 100)}`.trim();
+  };
+
+  let val = n;
+  const parts = [];
+  const units = [
+    { divisor: 10000000, label: 'Crore' },
+    { divisor: 100000, label: 'Lakh' },
+    { divisor: 1000, label: 'Thousand' }
+  ];
+
+  for (const { divisor, label } of units) {
+    const count = Math.floor(val / divisor);
+    if (count > 0) {
+      parts.push(`${convertBelowThousand(count)} ${label}`);
+      val %= divisor;
+    }
+  }
+  if (val > 0) {
+    parts.push(convertBelowThousand(val));
+  }
+  return `Rupees ${parts.join(' ')} Only`.replace(/\s+/g, ' ');
+};
+
+const formatDate = (dateStr) => {
+  if (!dateStr) return '-';
+  const parts = dateStr.split('-');
+  if (parts.length === 3 && parts[0].length === 4) {
+    return `${parts[2]}-${parts[1]}-${parts[0]}`;
+  }
+  return dateStr;
+};
+
+const updatePreview = () => {
+  const weight = Number(value('weight') || 0);
+  const rate = Number(value('rate') || 0);
+  const freight = weight * rate;
+  const otherCharges = Number(value('otherCharges') || 0);
+  const discount = Number(value('discount') || 0);
+  const taxable = freight + otherCharges - discount;
+
+  const taxMode = value('taxMode');
+  const taxRate = Number(value('taxRate') || 0);
+  let tax = 0;
+  if (taxMode === 'igst' || taxMode === 'split') {
+    tax = taxable * (taxRate / 100);
+  }
+  const grandTotal = Math.round(taxable + tax);
+
+  text('previewInvoiceNumber', value('invoiceNumber') || '11048');
+  text('previewInvoiceDate', formatDate(value('invoiceDate')));
+  text('previewLrNumber', value('lrNumber') || '-');
+  text('previewLrDate', formatDate(value('lrDate') || value('invoiceDate')));
+
+  text('previewCustomerName', value('customerName') || 'CUSTOMER NAME');
+  text('previewCustomerAddress', value('customerAddress') || '-');
+  text('previewCustomerGstin', value('customerGstin') || '-');
+  text('previewCustomerState', value('customerState') || '-');
+  text('previewCustomerStateCode', value('customerStateCode') || '-');
+
+  text('previewConsignor', value('consignor') || value('customerName') || '-');
+  text('previewConsignee', value('consignee') || value('customerName') || '-');
+
+  text('previewLoading', value('loadingLocation') || '-');
+  text('previewUnloading', value('unloadingLocation') || '-');
+  text('previewDescription', value('goodsDescription') || '-');
+  text('previewVehicle', value('vehicleNumber') || '-');
+  text('previewPackages', value('packages') || '-');
+
+  text('previewWeight', weight > 0 ? weight.toFixed(3) : '-');
+  text('previewRate', rate > 0 ? rate.toLocaleString('en-IN') : '-');
+  text('previewFreight', freight > 0 ? freight.toLocaleString('en-IN', { maximumFractionDigits: 2 }) : '-');
+  text('previewOtherCharges', otherCharges.toLocaleString('en-IN', { maximumFractionDigits: 2 }));
+  text('previewTotal', (freight + otherCharges).toLocaleString('en-IN', { maximumFractionDigits: 2 }));
+  text('previewGrandTotal', `₹ ${grandTotal.toLocaleString('en-IN')}`);
+  text('previewWords', moneyWords(grandTotal));
+  text('previewRemarks', value('remarks') || 'NA');
+
+  text('freightLive', currency(freight));
+  text('taxableLive', currency(taxable));
+  text('totalLive', currency(grandTotal));
+};
+
+const showStatus = (type, message, downloadUrl = null, filename = null) => {
+  if (!statusBox) return;
+  statusBox.className = `status-box ${type}`;
+  if (type === 'success' && downloadUrl) {
+    statusBox.innerHTML = `
+      <strong>Invoice generated successfully.</strong><br>
+      <span>Invoice Number: <strong>${value('invoiceNumber')}</strong></span><br>
+      <a class="download-btn" href="${downloadUrl}" download="${filename}">Download ${filename}</a>
+    `;
+  } else {
+    statusBox.textContent = message;
+  }
+  statusBox.style.display = 'block';
+};
+
+const hideStatus = () => {
+  if (statusBox) statusBox.style.display = 'none';
+};
+
+const serialize = () => Object.fromEntries(new FormData(form).entries());
+
+const restore = (data) => {
+  fields.forEach((field) => {
+    if (data[field.name || field.id] !== undefined) {
+      field.value = data[field.name || field.id];
+    }
+  });
+  updatePreview();
+};
+
+const renderHistory = () => {
+  const records = JSON.parse(localStorage.getItem(historyKey) || '[]');
+  if (historyCount) historyCount.textContent = `${records.length} saved`;
+  if (!historyList) return;
+
+  if (!records.length) {
+    historyList.innerHTML = '<p class="empty-state">Saved drafts will appear here.</p>';
+    return;
+  }
+
+  historyList.innerHTML = records
+    .slice()
+    .reverse()
+    .map(
+      (rec, idx) => `
+      <div class="history-item">
+        <div>
+          <strong>Invoice ${rec.invoiceNumber || '-'}</strong>
+          <small>${rec.customerName || 'No customer'} | ${rec.invoiceDate || 'No date'}</small>
+        </div>
+        <button type="button" data-history="${records.length - 1 - idx}">Load</button>
+      </div>`
+    )
+    .join('');
+
+  historyList.querySelectorAll('[data-history]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const idx = Number(btn.dataset.history);
+      restore(records[idx]);
+      if (draftBadge) draftBadge.textContent = 'Loaded';
+      hideStatus();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  });
+};
+
+const saveCurrentDraft = () => {
+  const data = serialize();
+  const records = JSON.parse(localStorage.getItem(historyKey) || '[]');
+  records.push(data);
+  localStorage.setItem(historyKey, JSON.stringify(records.slice(-20)));
+  if (draftBadge) draftBadge.textContent = 'Saved';
+  renderHistory();
+  showStatus('info', `Draft saved locally for invoice ${data.invoiceNumber || '-'}.`);
+};
+
+const resetInvoiceForm = () => {
+  form.reset();
+  const today = new Date().toISOString().slice(0, 10);
+  const invDateEl = document.getElementById('invoiceDate');
+  const lrDateEl = document.getElementById('lrDate');
+  if (invDateEl) invDateEl.value = today;
+  if (lrDateEl) lrDateEl.value = today;
+  const taxModeEl = document.getElementById('taxMode');
+  if (taxModeEl) taxModeEl.value = 'none';
+  if (draftBadge) draftBadge.textContent = 'New invoice';
+  hideStatus();
+  updatePreview();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 };
-fields.forEach(field => field.addEventListener('input', update));
-document.querySelector('#saveButton').addEventListener('click', () => { const records = JSON.parse(localStorage.getItem(historyKey) || '[]'); records.push({ ...serialize(), date: value('invoiceDate') }); localStorage.setItem(historyKey, JSON.stringify(records.slice(-20))); document.querySelector('#draftStatus').textContent = 'Saved'; renderHistory(); });
-document.querySelector('#printButton').addEventListener('click', async () => {
-  const requiredFields = ['invoiceNumber', 'invoiceDate', 'customerName', 'weight', 'rate'];
-  const missingField = requiredFields.find(fieldId => !value(fieldId));
-  if (missingField) { document.querySelector(`#${missingField}`).focus(); alert('Please complete the required invoice fields before submitting.'); return; }
-  const confirmed = window.confirm(`Are you sure you want to submit invoice ${value('invoiceNumber')}?\n\nPlease check the customer, trip, and total details before continuing.`);
-  if (!confirmed) return;
-  update();
-  const pdfWindow = window.open('', '_blank');
-  const button = document.querySelector('#printButton');
-  button.disabled = true;
-  button.textContent = 'Generating PDF...';
-  document.querySelector('#draftStatus').textContent = 'Generating';
-  try {
-    if (window.location.protocol === 'http:' || window.location.protocol === 'https:') {
-      const response = await fetch('/api/invoices', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(serialize()) });
-      const result = await response.json();
-      if (!response.ok || !result.ok) throw new Error(result.error || 'The server could not generate the PDF.');
-      const generatedUrl = new URL(result.url, window.location.href).href;
-      if (pdfWindow) pdfWindow.location.href = generatedUrl;
-      else window.location.href = generatedUrl;
-      document.querySelector('#draftStatus').textContent = `Saved: ${result.filename}`;
+
+// Listeners
+fields.forEach((field) => field.addEventListener('input', updatePreview));
+
+const fillSampleData = () => {
+  const sample = {
+    invoiceNumber: '11052',
+    invoiceDate: new Date().toISOString().slice(0, 10),
+    lrNumber: '11406',
+    lrDate: new Date().toISOString().slice(0, 10),
+    customerName: 'GREEN AGREVOLUTION PRIVATE LTD',
+    customerGstin: '09AAECG6456H1ZC',
+    customerAddress: 'B-103/104, Gomti Nagar, Vibhuti Khand Gomti Nagar,\nLucknow - 226010 UTTAR PRADESH',
+    customerState: 'UTTAR PRADESH',
+    customerStateCode: '09/UP',
+    consignor: 'GREEN AGREVOLUTION PRIVATE LTD',
+    consignorAddress: 'C/O GREEN AGREVOLUTION PVT LTD, Medchal',
+    consignorGstin: '36AAECG6456H1ZF',
+    consignorStateCode: '36/TS',
+    consignee: 'GREEN AGREVOLUTION PVT LTD',
+    consigneeAddress: 'C/O Green Agrevolution Pvt Ltd, Medchal',
+    consigneeStateCode: '36/TS',
+    loadingLocation: 'Medchal',
+    unloadingLocation: 'Kalakal',
+    vehicleNumber: 'AP 28 X 7948',
+    goodsDescription: 'Seeds',
+    packages: '273',
+    weight: '10.000',
+    rate: '700',
+    otherCharges: '0',
+    discount: '0',
+    taxMode: 'none',
+    taxRate: '0',
+    remarks: 'NA',
+  };
+  restore(sample);
+  showStatus('info', 'Sample invoice details filled. You can adjust the values and click Generate invoice DOCX.');
+};
+
+if (saveButton) saveButton.addEventListener('click', saveCurrentDraft);
+if (resetButton) resetButton.addEventListener('click', resetInvoiceForm);
+if (clearFormButton) clearFormButton.addEventListener('click', resetInvoiceForm);
+if (fillSampleButton) fillSampleButton.addEventListener('click', fillSampleData);
+
+form.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  hideStatus();
+
+  // Validate required fields
+  const validations = [
+    { id: 'invoiceNumber', name: 'Invoice Number' },
+    { id: 'invoiceDate', name: 'Invoice Date' },
+    { id: 'customerName', name: 'Customer Name' },
+    { id: 'vehicleNumber', name: 'Vehicle Number' },
+    { id: 'weight', name: 'Weight' },
+    { id: 'rate', name: 'Rate' },
+  ];
+
+  for (const item of validations) {
+    if (!value(item.id)) {
+      document.getElementById(item.id)?.focus();
+      showStatus('error', `Please enter ${item.name}.`);
       return;
     }
-    if (!window.html2canvas || !window.jspdf) throw new Error('PDF libraries could not be loaded. Check your internet connection and reload the app.');
-    const canvas = await window.html2canvas(document.querySelector('#invoiceSheet'), { scale: 2, backgroundColor: '#ffffff', useCORS: true });
-    const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-    const pageWidth = 297;
-    const pageHeight = 210;
-    const imageHeight = canvas.height * pageWidth / canvas.width;
-    const renderHeight = Math.min(imageHeight, pageHeight);
-    pdf.addImage(canvas.toDataURL('image/jpeg', 0.96), 'JPEG', 0, 0, pageWidth, renderHeight, undefined, 'FAST');
-    const blobUrl = pdf.output('bloburl');
-    const downloadLink = document.createElement('a');
-    downloadLink.href = blobUrl;
-    downloadLink.download = `Invoice-${value('invoiceNumber')}.pdf`;
-    downloadLink.click();
-    if (pdfWindow) {
-      pdfWindow.location.href = blobUrl;
-    } else {
-      window.location.href = blobUrl;
+  }
+
+  const data = serialize();
+  if (printButton) {
+    printButton.disabled = true;
+    printButton.textContent = 'Generating DOCX...';
+  }
+  showStatus('info', 'Generating invoice DOCX...');
+
+  try {
+    const response = await fetch('/api/invoices', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+
+    const result = await response.json();
+    if (!response.ok || !result.ok) {
+      throw new Error(result.error || 'Invoice generation failed. Please try again.');
     }
-    document.querySelector('#draftStatus').textContent = 'PDF ready';
+
+    // Success: show message with download link
+    showStatus('success', 'Invoice generated successfully.', result.url, result.filename);
+    if (draftBadge) draftBadge.textContent = `Saved: ${result.filename}`;
+
+    // Automatically trigger file download
+    const link = document.createElement('a');
+    link.href = result.url;
+    link.download = result.filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    // Save to local drafts history
+    const records = JSON.parse(localStorage.getItem(historyKey) || '[]');
+    records.push(data);
+    localStorage.setItem(historyKey, JSON.stringify(records.slice(-20)));
+    renderHistory();
   } catch (error) {
-    if (pdfWindow) pdfWindow.close();
-    document.querySelector('#draftStatus').textContent = 'PDF failed';
-    alert(error.message);
+    showStatus('error', error.message || 'Invoice generation failed. Please try again.');
   } finally {
-    button.disabled = false;
-    button.textContent = 'Generate invoice PDF';
+    if (printButton) {
+      printButton.disabled = false;
+      printButton.textContent = 'Generate invoice DOCX';
+    }
   }
 });
-document.querySelector('#resetButton').addEventListener('click', startBlankInvoice);
-document.querySelector('#clearFormButton').addEventListener('click', startBlankInvoice);
-setToday(); update(); renderHistory();
+
+// Initialization
+const todayStr = new Date().toISOString().slice(0, 10);
+const invoiceDateInput = document.getElementById('invoiceDate');
+const lrDateInput = document.getElementById('lrDate');
+if (invoiceDateInput && !invoiceDateInput.value) invoiceDateInput.value = todayStr;
+if (lrDateInput && !lrDateInput.value) lrDateInput.value = todayStr;
+
+updatePreview();
+renderHistory();

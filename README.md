@@ -1,40 +1,29 @@
-# TransBill
+# TransBill | Transport Invoice Studio
 
-TransBill is a dependency-free local MVP for creating transport freight invoices from form inputs.
+TransBill is an automated invoice generation system for transport freight billing. It populates an approved Word template (`templates/11048.docx`) directly from form inputs and generates finished `.docx` invoices ready for download, printing, or sending.
 
-## Run it
+The operator **never** has to open Microsoft Word to edit or format invoices manually.
 
-For automatic server-side PDF saving, run:
+---
 
-```powershell
-py server.py
-```
+## Quick Start
 
-Then open `http://127.0.0.1:8000` in your browser. Fill the form and select **Generate invoice PDF**. After confirmation, the server saves the file automatically in `generated/Invoice-{invoice-number}.pdf` and opens it.
+1. Start the server:
+   ```powershell
+   py server.py
+   ```
+2. Open [http://127.0.0.1:8000](http://127.0.0.1:8000) in your browser.
+3. Fill out the web form (the live invoice preview updates in real time as you type).
+4. Click **Generate invoice DOCX**.
+5. The backend automatically calculates totals, populates the Word template, saves the new file to `generated/Invoice-{invoiceNumber}.docx`, and initiates the download directly to your computer.
 
-The `index.html` file can also be opened directly as a fallback. In that mode the browser generates the PDF locally.
+---
 
-For the best PDF result:
+## Key Features
 
-1. Fill the form.
-2. Review the live invoice preview.
-3. Select **Generate & print PDF**.
-4. In the browser print dialog, choose **Save as PDF**, paper size **A4**, portrait orientation, and enable background graphics.
-
-Drafts are stored in the browser's local storage on this computer.
-
-## Current MVP features
-
-- Live invoice preview shaped around the supplied `11048.pdf` reference.
-- Freight calculation from weight x rate.
-- Other charges, discount, tax mode, tax rate, grand total, and amount in words.
-- Customer, LR, consignor, consignee, route, vehicle, package, and goods fields.
-- Local draft history with load functionality.
-- Direct A4 PDF generation that opens the completed invoice in a PDF viewer.
-
-## Production work still required
-
-- Replace placeholder company information with the approved legal details.
-- Confirm the exact permanent text, logo, fonts, bank details, GST rules, and PDF coordinates against the original invoice.
-- Add authenticated server storage, users, audit history, invoice numbering, and cloud PDF storage.
-- Replace the canvas PDF renderer with a server-side template stamping service if pixel-level matching is required across all browsers.
+- **Zero Manual Word Editing**: Form inputs are placed into the exact locations and runs of the master template while strictly preserving font styles, table borders, cell dimensions, and alignment.
+- **Server-Side Calculations**: Computes freight (`weight × rate`), tax modes (IGST / CGST+SGST / none), other charges, discounts, grand totals, and Indian currency words ("Rupees ... Only").
+- **Live Visual Preview**: The right-hand sheet mirrors the template layout and updates continuously as the operator types.
+- **Duplicate Prevention**: Prevents accidental overwriting of existing invoices with friendly warning messages.
+- **Draft History**: Recent drafts are saved locally in the browser for instant recall.
+- **Pristine Reference Preservation**: The original `11048.docx` is preserved intact as the reference baseline.

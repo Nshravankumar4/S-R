@@ -9,7 +9,7 @@
 <body>
   <header class="topbar">
     <div class="brand"><span class="brand-mark">S&amp;R</span><span><strong>S&amp;R TRANSPORT</strong><small>Transport billing studio</small></span></div>
-    <div class="topbar-actions"><span class="status-dot"></span><span>Local workspace</span><button class="ghost-button" id="clearFormButton" type="button">New invoice</button></div>
+    <div class="topbar-actions"><span class="status-dot"></span><span>Local workspace</span><button class="ghost-button" id="fillSampleButton" type="button">Fill sample</button><button class="ghost-button" id="clearFormButton" type="button">New invoice</button></div>
   </header>
 
   <main class="workspace">
@@ -52,7 +52,8 @@
           <label>Remarks<input id="remarks" name="remarks" placeholder="Optional note"></label>
         </div><div class="calculation-strip"><span>Freight <strong id="freightLive">INR 7,000.00</strong></span><span>Taxable <strong id="taxableLive">INR 7,000.00</strong></span><span>Total <strong id="totalLive">INR 7,000.00</strong></span></div></fieldset>
 
-        <div class="form-actions"><button class="primary-button" id="printButton" type="button">Generate invoice PDF</button><button class="secondary-button" id="saveButton" type="button">Save draft</button><button class="text-button" id="resetButton" type="button">Reset</button></div>
+        <div class="form-actions"><button class="primary-button" id="printButton" type="submit">Generate invoice DOCX</button><button class="secondary-button" id="saveButton" type="button">Save draft</button><button class="text-button" id="resetButton" type="button">Reset</button></div>
+        <div id="statusBox" class="status-box" style="display: none;"></div>
       </form>
 
       <section class="history-section"><div class="section-heading compact"><div><p class="eyebrow">Saved locally</p><h2>Recent invoices</h2></div><span class="muted" id="historyCount">0 saved</span></div><div id="historyList" class="history-list"><p class="empty-state">Saved drafts will appear here.</p></div></section>
@@ -68,8 +69,6 @@
       <div class="invoice-footer"><div class="legal"><b>SR TRANSPORT</b><b>Transport Contractors &amp; Fleet Owner</b><b>Formerly Saritha Transport</b><b>Plot No. 341, Sai Bhagavan Colony</b><b>Beeramguda, R.C. Puram, Hyderabad - 502032</b></div><div class="bank"><b>PAYMENT DETAILS</b><p>Bank: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Kotak Mahindra Bank</p><p>A/C NO: &nbsp;&nbsp;&nbsp;&nbsp; 1720252626</p><p>IFSC CODE: &nbsp;&nbsp; KKBK0007489</p><p>Branch: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Chandanagar</p></div><div class="signature">For S&amp;R TRANSPORT<br><br><strong>Authorised Signatory</strong></div></div><div class="legal-bottom">Subject to Sangareddy Jurisdiction only<br><b>Note: GST to be paid by Service Recipient</b> <span>*THIS IS COMPUTER GENERATED BILL</span></div><div class="rcm">Transport Contractors &amp; Fleet Owner</div>
     </article></section>
   </main>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
