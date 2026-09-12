@@ -328,6 +328,125 @@ if (printPdfButton) {
   });
 }
 
+const escapeXml = (unsafe) => {
+  return String(unsafe || '').replace(/[<>&'"]/g, (c) => {
+    switch (c) {
+      case '<': return '&lt;';
+      case '>': return '&gt;';
+      case '&': return '&amp;';
+      case "'": return '&apos;';
+      case '"': return '&quot;';
+    }
+  });
+};
+
+const splitAddress = (addr) => {
+  const raw = String(addr || '').trim();
+  if (!raw) return ['-', '-'];
+  const lines = raw.split('\n').map((l) => l.trim()).filter(Boolean);
+  if (lines.length >= 2) return [lines[0], lines.slice(1).join(', ')];
+  if (raw.length > 40 && raw.includes(',')) {
+    const idx = raw.indexOf(',', 25);
+    if (idx !== -1) return [raw.slice(0, idx).trim(), raw.slice(idx + 1).trim()];
+  }
+  return [raw, '-'];
+};
+
+const generateDocxClient = async (data) => {
+  if (!window.JSZip) {
+    throw new Error('Word template engine is still loading. Please try again.');
+  }
+
+  const resp = await fetch('templates/11048.docx');
+  if (!resp.ok) {
+    throw new Error('Master Word template not found at templates/11048.docx');
+  }
+  const arrayBuffer = await resp.arrayBuffer();
+
+  const zip = await window.JSZip.loadAsync(arrayBuffer);
+  const docFile = zip.file('word/document.xml');
+  if (!docFile) {
+    throw new Error('Corrupted docx template structure.');
+  }
+  let xml = await docFile.async('string');
+
+  const weight = Number(data.weight || 0);
+  const rate = Number(data.rate || 0);
+  const freight = weight * rate;
+  const otherCharges = Number(data.otherCharges || 0);
+  const discount = Number(data.discount || 0);
+  const taxable = freight + otherCharges - discount;
+
+  const taxMode = data.taxMode || 'none';
+  const taxRate = Number(data.taxRate || 0);
+  let tax = 0;
+  if (taxMode === 'igst' || taxMode === 'split') {
+    tax = taxable * (taxRate / 100);
+  }
+  const grandTotal = Math.round(taxable + tax);
+
+  const [addr1, addr2] = splitAddress(data.customerAddress);
+  const invDate = formatDate(data.invoiceDate);
+  const lrDate = formatDate(data.lrDate || data.invoiceDate);
+
+  const mapping = {
+    '{{invoice_number}}': data.invoiceNumber || '-',
+    '{{invoice_date}}': invDate,
+    '{{customer_name}}': data.customerName || '-',
+    '{{customer_address_1}}': addr1,
+    '{{customer_address_2}}': addr2,
+    '{{gstin}}': data.customerGstin || '-',
+    '{{customer_state}}': data.customerState || '-',
+    '{{customer_state_code}}': data.customerStateCode || '-',
+    '{{consignor}}': data.consignor || data.customerName || '-',
+    '{{consignor_address}}': data.consignorAddress || addr1,
+    '{{consignor_gstin}}': data.consignorGstin || data.customerGstin || '-',
+    '{{consignor_state_code}}': data.consignorStateCode || data.customerStateCode || '-',
+    '{{consignee}}': data.consignee || data.customerName || '-',
+    '{{consignee_address}}': data.consigneeAddress || addr1,
+    '{{consignee_state_code}}': data.consigneeStateCode || data.customerStateCode || '-',
+    '{{sl_no}}': '1',
+    '{{lr_number}}': data.lrNumber || '-',
+    '{{lr_date}}': lrDate,
+    '{{loading_location}}': data.loadingLocation || '-',
+    '{{unloading_location}}': data.unloadingLocation || '-',
+    '{{goods_description}}': data.goodsDescription || '-',
+    '{{vehicle_number}}': data.vehicleNumber || '-',
+    '{{packages}}': data.packages || '-',
+    '{{weight}}': weight > 0 ? weight.toFixed(3) : '-',
+    '{{rate}}': rate > 0 ? String(rate) : '-',
+    '{{freight}}': Number.isInteger(freight) ? freight.toLocaleString('en-IN') : freight.toFixed(2),
+    '{{other_charges}}': otherCharges > 0 ? String(otherCharges) : '0',
+    '{{total}}': (freight + otherCharges).toLocaleString('en-IN'),
+    '{{remarks}}': data.remarks || 'NA',
+    '{{grand_total}}': grandTotal.toLocaleString('en-IN'),
+    '{{amount_in_words}}': moneyWords(grandTotal),
+  };
+
+  for (const [ph, val] of Object.entries(mapping)) {
+    xml = xml.split(ph).join(escapeXml(val));
+  }
+
+  zip.file('word/document.xml', xml);
+  const blob = await zip.generateAsync({
+    type: 'blob',
+    mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    compression: 'DEFLATE',
+  });
+
+  const filename = `Invoice-${data.invoiceNumber || 'invoice'}.docx`;
+  const blobUrl = URL.createObjectURL(blob);
+
+  const link = document.createElement('a');
+  link.href = blobUrl;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  return { filename, url: blobUrl };
+};
+
 form.addEventListener('submit', async (event) => {
   event.preventDefault();
   hideStatus();
@@ -342,28 +461,45 @@ form.addEventListener('submit', async (event) => {
   showStatus('info', 'Generating invoice DOCX...');
 
   try {
-    const response = await fetch('/api/invoices', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
+    let result = null;
 
-    const result = await response.json();
-    if (!response.ok || !result.ok) {
-      throw new Error(result.error || 'Invoice generation failed. Please try again.');
+    // 1. Try server API if available
+    try {
+      const response = await fetch('/api/invoices', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+
+      if (response.ok) {
+        const resJson = await response.json();
+        if (resJson.ok) {
+          result = resJson;
+          const link = document.createElement('a');
+          link.href = result.url;
+          link.download = result.filename;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        } else if (resJson.error && resJson.error.includes('already exists')) {
+          throw new Error(resJson.error);
+        }
+      }
+    } catch (srvErr) {
+      if (srvErr.message && srvErr.message.includes('already exists')) {
+        throw srvErr;
+      }
+      // If server is not reachable (e.g. GitHub Pages static host), fallback to browser generation
+    }
+
+    // 2. Fallback to client-side DOCX generation (works 100% on GitHub Pages without server)
+    if (!result) {
+      result = await generateDocxClient(data);
     }
 
     // Success: show message with download link
     showStatus('success', 'Invoice generated successfully.', result.url, result.filename);
     if (draftBadge) draftBadge.textContent = `Saved: ${result.filename}`;
-
-    // Automatically trigger file download
-    const link = document.createElement('a');
-    link.href = result.url;
-    link.download = result.filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
 
     // Save to local drafts history
     const records = JSON.parse(localStorage.getItem(historyKey) || '[]');
