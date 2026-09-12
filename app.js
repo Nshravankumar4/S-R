@@ -255,6 +255,11 @@ if (resetButton) resetButton.addEventListener('click', resetInvoiceForm);
 if (clearFormButton) clearFormButton.addEventListener('click', resetInvoiceForm);
 if (fillSampleButton) fillSampleButton.addEventListener('click', fillSampleData);
 
+const chipGreenAgro = document.getElementById('chipGreenAgro');
+const chipClear = document.getElementById('chipClear');
+if (chipGreenAgro) chipGreenAgro.addEventListener('click', fillSampleData);
+if (chipClear) chipClear.addEventListener('click', resetInvoiceForm);
+
 const validateForm = () => {
   const validations = [
     { id: 'invoiceNumber', name: 'Invoice Number' },
