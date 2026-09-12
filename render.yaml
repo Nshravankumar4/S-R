@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: sr-transport
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python -u server.py
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9

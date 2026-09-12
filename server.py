@@ -181,6 +181,9 @@ class InvoiceHandler(SimpleHTTPRequestHandler):
         ".json": "application/json",
     }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, directory=str(ROOT), **kwargs)
+
     def do_POST(self):
         if self.path != "/api/invoices":
             self.send_error(404, "Endpoint Not Found")
