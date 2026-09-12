@@ -250,9 +250,11 @@ class InvoiceHandler(SimpleHTTPRequestHandler):
 
 if __name__ == "__main__":
     os.chdir(ROOT)
-    server = ThreadingHTTPServer(("127.0.0.1", 8000), InvoiceHandler)
+    port = int(os.environ.get("PORT", 8000))
+    host = "0.0.0.0"
+    server = ThreadingHTTPServer((host, port), InvoiceHandler)
     print("=" * 60)
-    print("TransBill DOCX Auto-Generation System running at http://127.0.0.1:8000")
+    print(f"TransBill System running at http://{host}:{port}")
     print(f"Master Template: {TEMPLATE_PATH}")
     print(f"Generated Invoices Directory: {OUTPUT_DIR}")
     print("=" * 60)

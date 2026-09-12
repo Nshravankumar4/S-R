@@ -2,6 +2,8 @@ const form = document.getElementById('invoiceForm');
 const statusBox = document.getElementById('statusBox');
 const draftBadge = document.getElementById('draftStatus');
 const printButton = document.getElementById('printButton');
+const downloadPdfButton = document.getElementById('downloadPdfButton');
+const printPdfButton = document.getElementById('printPdfButton');
 const saveButton = document.getElementById('saveButton');
 const resetButton = document.getElementById('resetButton');
 const clearFormButton = document.getElementById('clearFormButton');
@@ -253,11 +255,7 @@ if (resetButton) resetButton.addEventListener('click', resetInvoiceForm);
 if (clearFormButton) clearFormButton.addEventListener('click', resetInvoiceForm);
 if (fillSampleButton) fillSampleButton.addEventListener('click', fillSampleData);
 
-form.addEventListener('submit', async (event) => {
-  event.preventDefault();
-  hideStatus();
-
-  // Validate required fields
+const validateForm = () => {
   const validations = [
     { id: 'invoiceNumber', name: 'Invoice Number' },
     { id: 'invoiceDate', name: 'Invoice Date' },
@@ -271,9 +269,70 @@ form.addEventListener('submit', async (event) => {
     if (!value(item.id)) {
       document.getElementById(item.id)?.focus();
       showStatus('error', `Please enter ${item.name}.`);
-      return;
+      return false;
     }
   }
+  return true;
+};
+
+if (downloadPdfButton) {
+  downloadPdfButton.addEventListener('click', async () => {
+    hideStatus();
+    if (!validateForm()) return;
+    updatePreview();
+
+    if (!window.html2canvas || !window.jspdf) {
+      showStatus('error', 'PDF library is loading. Please try again in a moment or use Print.');
+      return;
+    }
+
+    const sheet = document.getElementById('invoiceSheet');
+    downloadPdfButton.disabled = true;
+    downloadPdfButton.textContent = 'Generating PDF...';
+    showStatus('info', 'Generating PDF...');
+
+    try {
+      const canvas = await window.html2canvas(sheet, {
+        scale: 2,
+        backgroundColor: '#ffffff',
+        useCORS: true,
+        logging: false,
+      });
+
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+      const pageWidth = 297;
+      const pageHeight = 210;
+      const imgHeight = (canvas.height * pageWidth) / canvas.width;
+      const renderHeight = Math.min(imgHeight, pageHeight);
+
+      pdf.addImage(canvas.toDataURL('image/jpeg', 0.98), 'JPEG', 0, 0, pageWidth, renderHeight, undefined, 'FAST');
+      const filename = `Invoice-${value('invoiceNumber') || 'invoice'}.pdf`;
+      pdf.save(filename);
+      showStatus('success', `PDF downloaded successfully: ${filename}`);
+    } catch (err) {
+      showStatus('error', 'PDF generation error: ' + err.message);
+    } finally {
+      downloadPdfButton.disabled = false;
+      downloadPdfButton.textContent = 'Download PDF';
+    }
+  });
+}
+
+if (printPdfButton) {
+  printPdfButton.addEventListener('click', () => {
+    hideStatus();
+    if (!validateForm()) return;
+    updatePreview();
+    window.print();
+  });
+}
+
+form.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  hideStatus();
+
+  if (!validateForm()) return;
 
   const data = serialize();
   if (printButton) {
