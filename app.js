@@ -296,28 +296,69 @@ if (downloadPdfButton) {
     downloadPdfButton.textContent = 'Generating PDF...';
     showStatus('info', 'Generating PDF...');
 
+    let clone = null;
     try {
-      const canvas = await window.html2canvas(sheet, {
+      // Create fixed-width unclipped clone so PDF is identical on mobile and desktop
+      clone = sheet.cloneNode(true);
+      clone.id = 'invoiceSheetPrintClone';
+      clone.style.width = '1050px';
+      clone.style.maxWidth = '1050px';
+      clone.style.minWidth = '1050px';
+      clone.style.height = 'auto';
+      clone.style.position = 'fixed';
+      clone.style.left = '-9999px';
+      clone.style.top = '0';
+      clone.style.background = '#ffffff';
+      clone.style.boxShadow = 'none';
+      clone.style.margin = '0';
+      clone.style.zIndex = '-9999';
+      document.body.appendChild(clone);
+
+      // Allow DOM to compute layout
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      const canvas = await window.html2canvas(clone, {
         scale: 2,
         backgroundColor: '#ffffff',
         useCORS: true,
         logging: false,
+        width: 1050,
+        height: clone.offsetHeight,
+        windowWidth: 1200,
       });
 
       const { jsPDF } = window.jspdf;
       const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
       const pageWidth = 297;
       const pageHeight = 210;
-      const imgHeight = (canvas.height * pageWidth) / canvas.width;
-      const renderHeight = Math.min(imgHeight, pageHeight);
 
-      pdf.addImage(canvas.toDataURL('image/jpeg', 0.98), 'JPEG', 0, 0, pageWidth, renderHeight, undefined, 'FAST');
+      // Fit entire invoice neatly on A4 landscape with 5mm margin
+      const margin = 5;
+      const printableW = pageWidth - margin * 2;
+      const printableH = pageHeight - margin * 2;
+
+      const canvasRatio = canvas.height / canvas.width;
+      let renderW = printableW;
+      let renderH = renderW * canvasRatio;
+
+      if (renderH > printableH) {
+        renderH = printableH;
+        renderW = renderH / canvasRatio;
+      }
+
+      const x = margin + (printableW - renderW) / 2;
+      const y = margin + (printableH - renderH) / 2;
+
+      pdf.addImage(canvas.toDataURL('image/jpeg', 0.98), 'JPEG', x, y, renderW, renderH, undefined, 'FAST');
       const filename = `Invoice-${value('invoiceNumber') || 'invoice'}.pdf`;
       pdf.save(filename);
       showStatus('success', `PDF downloaded successfully: ${filename}`);
     } catch (err) {
       showStatus('error', 'PDF generation error: ' + err.message);
     } finally {
+      if (clone && clone.parentNode) {
+        clone.parentNode.removeChild(clone);
+      }
       downloadPdfButton.disabled = false;
       downloadPdfButton.textContent = 'Download PDF';
     }
