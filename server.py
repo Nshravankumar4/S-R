@@ -171,14 +171,36 @@ def create_invoice_docx(data, output_path):
     doc.save(output_path)
 
 
+def convert_docx_to_pdf(docx_path, pdf_path):
+    try:
+        import win32com.client
+        import pythoncom
+        pythoncom.CoInitialize()
+        word = win32com.client.Dispatch("Word.Application")
+        word.Visible = False
+        try:
+            doc = word.Documents.Open(str(docx_path.resolve()), ReadOnly=True)
+            doc.SaveAs(str(pdf_path.resolve()), FileFormat=17) # 17 = wdFormatPDF
+            doc.Close()
+            return True
+        finally:
+            word.Quit()
+            pythoncom.CoUninitialize()
+    except Exception as e:
+        print(f"Warning: Word COM PDF conversion failed: {e}")
+        return False
+
+
 class InvoiceHandler(SimpleHTTPRequestHandler):
     extensions_map = {
         **SimpleHTTPRequestHandler.extensions_map,
         ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        ".pdf": "application/pdf",
         ".js": "application/javascript",
         ".css": "text/css",
         ".html": "text/html",
         ".json": "application/json",
+        ".png": "image/png",
     }
 
     def __init__(self, *args, **kwargs):
@@ -212,13 +234,21 @@ class InvoiceHandler(SimpleHTTPRequestHandler):
             if output_path.exists():
                 raise ValueError(f"Invoice {invoice_number} already exists. Please use another invoice number.")
 
+            # 1. Create DOCX from master template
             create_invoice_docx(data, output_path)
+
+            # 2. Convert that exact generated DOCX to PDF
+            pdf_filename = f"Invoice-{safe_filename(invoice_number)}.pdf"
+            pdf_path = OUTPUT_DIR / pdf_filename
+            has_pdf = convert_docx_to_pdf(output_path, pdf_path)
 
             response = json.dumps({
                 "ok": True,
                 "invoiceNumber": invoice_number,
                 "filename": filename,
                 "url": f"/generated/{filename}",
+                "pdfFilename": pdf_filename if has_pdf else None,
+                "pdfUrl": f"/generated/{pdf_filename}" if has_pdf else None,
                 "message": f"Invoice generated successfully."
             }).encode("utf-8")
 
@@ -245,7 +275,7 @@ class InvoiceHandler(SimpleHTTPRequestHandler):
     def end_headers(self):
         self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Cache-Control", "no-store, no-cache, must-revalidate")
-        if self.path.endswith(".docx"):
+        if self.path.endswith(".docx") or self.path.endswith(".pdf"):
             filename = Path(self.path).name
             self.send_header("Content-Disposition", f'attachment; filename="{filename}"')
         super().end_headers()

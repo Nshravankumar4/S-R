@@ -3,6 +3,7 @@ const statusBox = document.getElementById('statusBox');
 const draftBadge = document.getElementById('draftStatus');
 const printButton = document.getElementById('printButton');
 const downloadPdfButton = document.getElementById('downloadPdfButton');
+const downloadDocxButton = document.getElementById('downloadDocxButton');
 const printPdfButton = document.getElementById('printPdfButton');
 const saveButton = document.getElementById('saveButton');
 const resetButton = document.getElementById('resetButton');
@@ -121,15 +122,25 @@ const updatePreview = () => {
   text('totalLive', currency(grandTotal));
 };
 
-const showStatus = (type, message, downloadUrl = null, filename = null) => {
+let lastGeneratedResult = null;
+
+const showStatus = (type, message, downloadUrl = null, filename = null, pdfUrl = null, pdfFilename = null) => {
   if (!statusBox) return;
   statusBox.className = `status-box ${type}`;
-  if (type === 'success' && downloadUrl) {
-    statusBox.innerHTML = `
+  if (type === 'success' && (downloadUrl || pdfUrl)) {
+    let html = `
       <strong>Invoice generated successfully.</strong><br>
       <span>Invoice Number: <strong>${value('invoiceNumber')}</strong></span><br>
-      <a class="download-btn" href="${downloadUrl}" download="${filename}">Download ${filename}</a>
+      <div style="display:flex;gap:10px;margin-top:8px;flex-wrap:wrap;">
     `;
+    if (pdfUrl && pdfFilename) {
+      html += `<a class="download-btn" style="background:#1d4ed8;" href="${pdfUrl}" download="${pdfFilename}">Download ${pdfFilename} (PDF)</a>`;
+    }
+    if (downloadUrl && filename) {
+      html += `<a class="download-btn" href="${downloadUrl}" download="${filename}">Download ${filename} (Word)</a>`;
+    }
+    html += `</div>`;
+    statusBox.innerHTML = html;
   } else {
     statusBox.textContent = message;
   }
@@ -280,87 +291,122 @@ const validateForm = () => {
   return true;
 };
 
+const downloadFile = (url, filename) => {
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
 if (downloadPdfButton) {
   downloadPdfButton.addEventListener('click', async () => {
     hideStatus();
     if (!validateForm()) return;
     updatePreview();
 
-    if (!window.html2canvas || !window.jspdf) {
-      showStatus('error', 'PDF library is loading. Please try again in a moment or use Print.');
+    const currentInvNum = value('invoiceNumber');
+
+    // If already generated and matching, download directly
+    if (lastGeneratedResult && lastGeneratedResult.pdfUrl && lastGeneratedResult.invoiceNumber === currentInvNum) {
+      downloadFile(lastGeneratedResult.pdfUrl, lastGeneratedResult.pdfFilename || `Invoice-${currentInvNum}.pdf`);
+      showStatus('success', 'PDF downloaded successfully.', lastGeneratedResult.url, lastGeneratedResult.filename, lastGeneratedResult.pdfUrl, lastGeneratedResult.pdfFilename);
       return;
     }
 
-    const sheet = document.getElementById('invoiceSheet');
     downloadPdfButton.disabled = true;
     downloadPdfButton.textContent = 'Generating PDF...';
     showStatus('info', 'Generating PDF...');
 
-    let clone = null;
     try {
-      // Create fixed-width unclipped clone so PDF is identical on mobile and desktop
-      clone = sheet.cloneNode(true);
-      clone.id = 'invoiceSheetPrintClone';
-      clone.style.width = '1050px';
-      clone.style.maxWidth = '1050px';
-      clone.style.minWidth = '1050px';
-      clone.style.height = 'auto';
-      clone.style.position = 'fixed';
-      clone.style.left = '-9999px';
-      clone.style.top = '0';
-      clone.style.background = '#ffffff';
-      clone.style.boxShadow = 'none';
-      clone.style.margin = '0';
-      clone.style.zIndex = '-9999';
-      document.body.appendChild(clone);
+      const data = serialize();
+      // 1. Try server API if available
+      try {
+        const response = await fetch('/api/invoices', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+        if (response.ok) {
+          const resJson = await response.json();
+          if (resJson.ok && resJson.pdfUrl) {
+            lastGeneratedResult = resJson;
+            downloadFile(resJson.pdfUrl, resJson.pdfFilename);
+            showStatus('success', 'PDF generated from Word template.', resJson.url, resJson.filename, resJson.pdfUrl, resJson.pdfFilename);
+            return;
+          }
+        }
+      } catch (srvErr) {}
 
-      // Allow DOM to compute layout
-      await new Promise((resolve) => setTimeout(resolve, 50));
-
-      const canvas = await window.html2canvas(clone, {
-        scale: 2,
-        backgroundColor: '#ffffff',
-        useCORS: true,
-        logging: false,
-        width: 1050,
-        height: clone.offsetHeight,
-        windowWidth: 1200,
-      });
-
-      const { jsPDF } = window.jspdf;
-      const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-      const pageWidth = 297;
-      const pageHeight = 210;
-
-      // Fit entire invoice neatly on A4 landscape with 5mm margin
-      const margin = 5;
-      const printableW = pageWidth - margin * 2;
-      const printableH = pageHeight - margin * 2;
-
-      const canvasRatio = canvas.height / canvas.width;
-      let renderW = printableW;
-      let renderH = renderW * canvasRatio;
-
-      if (renderH > printableH) {
-        renderH = printableH;
-        renderW = renderH / canvasRatio;
-      }
-
-      const x = margin + (printableW - renderW) / 2;
-      const y = margin + (printableH - renderH) / 2;
-
-      pdf.addImage(canvas.toDataURL('image/jpeg', 0.98), 'JPEG', x, y, renderW, renderH, undefined, 'FAST');
-      const filename = `Invoice-${value('invoiceNumber') || 'invoice'}.pdf`;
-      pdf.save(filename);
-      showStatus('success', `PDF downloaded successfully: ${filename}`);
+      // 2. Client-side PDF fallback (for GitHub Pages)
+      const pdfRes = await generatePdfClient(data, true);
+      lastGeneratedResult = {
+        ...(lastGeneratedResult || {}),
+        invoiceNumber: data.invoiceNumber,
+        pdfFilename: pdfRes.pdfFilename,
+        pdfUrl: pdfRes.pdfUrl,
+      };
+      showStatus('success', 'PDF downloaded successfully.', lastGeneratedResult.url, lastGeneratedResult.filename, pdfRes.pdfUrl, pdfRes.pdfFilename);
     } catch (err) {
       showStatus('error', 'PDF generation error: ' + err.message);
     } finally {
-      if (clone && clone.parentNode) {
-        clone.parentNode.removeChild(clone);
-      }
       downloadPdfButton.disabled = false;
       downloadPdfButton.textContent = 'Download PDF';
+    }
+  });
+}
+
+if (downloadDocxButton) {
+  downloadDocxButton.addEventListener('click', async () => {
+    hideStatus();
+    if (!validateForm()) return;
+    updatePreview();
+
+    const currentInvNum = value('invoiceNumber');
+
+    if (lastGeneratedResult && lastGeneratedResult.url && lastGeneratedResult.invoiceNumber === currentInvNum) {
+      downloadFile(lastGeneratedResult.url, lastGeneratedResult.filename || `Invoice-${currentInvNum}.docx`);
+      showStatus('success', 'Word invoice downloaded.', lastGeneratedResult.url, lastGeneratedResult.filename, lastGeneratedResult.pdfUrl, lastGeneratedResult.pdfFilename);
+      return;
+    }
+
+    downloadDocxButton.disabled = true;
+    downloadDocxButton.textContent = 'Generating Word...';
+    showStatus('info', 'Generating Word document (.docx)...');
+
+    try {
+      const data = serialize();
+      try {
+        const response = await fetch('/api/invoices', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+        if (response.ok) {
+          const resJson = await response.json();
+          if (resJson.ok && resJson.url) {
+            lastGeneratedResult = resJson;
+            downloadFile(resJson.url, resJson.filename);
+            showStatus('success', 'Word invoice downloaded.', resJson.url, resJson.filename, resJson.pdfUrl, resJson.pdfFilename);
+            return;
+          }
+        }
+      } catch (srvErr) {}
+
+      const docxRes = await generateDocxClient(data, true);
+      lastGeneratedResult = {
+        ...(lastGeneratedResult || {}),
+        invoiceNumber: data.invoiceNumber,
+        filename: docxRes.filename,
+        url: docxRes.url,
+      };
+      showStatus('success', 'Word invoice downloaded.', docxRes.url, docxRes.filename, lastGeneratedResult.pdfUrl, lastGeneratedResult.pdfFilename);
+    } catch (err) {
+      showStatus('error', 'Word generation error: ' + err.message);
+    } finally {
+      downloadDocxButton.disabled = false;
+      downloadDocxButton.textContent = 'Download Word (.docx)';
     }
   });
 }
@@ -398,7 +444,7 @@ const splitAddress = (addr) => {
   return [raw, '-'];
 };
 
-const generateDocxClient = async (data) => {
+const generateDocxClient = async (data, autoDownload = false) => {
   if (!window.JSZip) {
     throw new Error('Word template engine is still loading. Please try again.');
   }
@@ -483,14 +529,96 @@ const generateDocxClient = async (data) => {
   const filename = `Invoice-${data.invoiceNumber || 'invoice'}.docx`;
   const blobUrl = URL.createObjectURL(blob);
 
-  const link = document.createElement('a');
-  link.href = blobUrl;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+  if (autoDownload) {
+    downloadFile(blobUrl, filename);
+  }
 
-  return { filename, url: blobUrl };
+  return { filename, url: blobUrl, blob };
+};
+
+const generatePdfClient = async (data, autoDownload = false) => {
+  if (!window.html2canvas || !window.jspdf) {
+    throw new Error('PDF library is loading. Please wait a moment and try again.');
+  }
+
+  const sheet = document.getElementById('invoiceSheet');
+  let clone = null;
+  try {
+    clone = sheet.cloneNode(true);
+    clone.id = 'invoiceSheetPdfClone';
+    clone.style.width = '1050px';
+    clone.style.maxWidth = '1050px';
+    clone.style.minWidth = '1050px';
+    clone.style.height = 'auto';
+    clone.style.position = 'fixed';
+    clone.style.left = '-9999px';
+    clone.style.top = '0';
+    clone.style.background = '#ffffff';
+    clone.style.boxShadow = 'none';
+    clone.style.margin = '0';
+    clone.style.zIndex = '-9999';
+    document.body.appendChild(clone);
+
+    // Ensure images in clone are loaded
+    const imgs = Array.from(clone.querySelectorAll('img'));
+    await Promise.all(imgs.map((img) => {
+      if (img.complete) return Promise.resolve();
+      return new Promise((res) => {
+        img.onload = res;
+        img.onerror = res;
+      });
+    }));
+
+    await new Promise((resolve) => setTimeout(resolve, 80));
+
+    const canvas = await window.html2canvas(clone, {
+      scale: 2.5,
+      backgroundColor: '#ffffff',
+      useCORS: true,
+      allowTaint: true,
+      logging: false,
+      width: 1050,
+      height: clone.offsetHeight,
+      windowWidth: 1200,
+    });
+
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const pageWidth = 297;
+    const pageHeight = 210;
+
+    const margin = 5;
+    const printableW = pageWidth - margin * 2;
+    const printableH = pageHeight - margin * 2;
+
+    const canvasRatio = canvas.height / canvas.width;
+    let renderW = printableW;
+    let renderH = renderW * canvasRatio;
+
+    if (renderH > printableH) {
+      renderH = printableH;
+      renderW = renderH / canvasRatio;
+    }
+
+    const x = margin + (printableW - renderW) / 2;
+    const y = margin + (printableH - renderH) / 2;
+
+    pdf.addImage(canvas.toDataURL('image/jpeg', 0.98), 'JPEG', x, y, renderW, renderH, undefined, 'FAST');
+    const pdfFilename = `Invoice-${data.invoiceNumber || 'invoice'}.pdf`;
+
+    const blob = pdf.output('blob');
+    const pdfUrl = URL.createObjectURL(blob);
+
+    if (autoDownload) {
+      downloadFile(pdfUrl, pdfFilename);
+    }
+
+    return { pdfFilename, pdfUrl, blob };
+  } finally {
+    if (clone && clone.parentNode) {
+      clone.parentNode.removeChild(clone);
+    }
+  }
 };
 
 form.addEventListener('submit', async (event) => {
@@ -498,18 +626,19 @@ form.addEventListener('submit', async (event) => {
   hideStatus();
 
   if (!validateForm()) return;
+  updatePreview();
 
   const data = serialize();
   if (printButton) {
     printButton.disabled = true;
-    printButton.textContent = 'Generating DOCX...';
+    printButton.textContent = 'Generating Invoice...';
   }
-  showStatus('info', 'Generating invoice DOCX...');
+  showStatus('info', 'Generating Invoice (Word & PDF)...');
 
   try {
     let result = null;
 
-    // 1. Try server API if available
+    // 1. Try server API if available (e.g. local backend with Word COM conversion)
     try {
       const response = await fetch('/api/invoices', {
         method: 'POST',
@@ -521,12 +650,11 @@ form.addEventListener('submit', async (event) => {
         const resJson = await response.json();
         if (resJson.ok) {
           result = resJson;
-          const link = document.createElement('a');
-          link.href = result.url;
-          link.download = result.filename;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
+          if (result.pdfUrl) {
+            downloadFile(result.pdfUrl, result.pdfFilename);
+          } else if (result.url) {
+            downloadFile(result.url, result.filename);
+          }
         } else if (resJson.error && resJson.error.includes('already exists')) {
           throw new Error(resJson.error);
         }
@@ -535,17 +663,26 @@ form.addEventListener('submit', async (event) => {
       if (srvErr.message && srvErr.message.includes('already exists')) {
         throw srvErr;
       }
-      // If server is not reachable (e.g. GitHub Pages static host), fallback to browser generation
+      // Server not reachable (e.g. GitHub Pages static host) -> fallback to browser generation
     }
 
-    // 2. Fallback to client-side DOCX generation (works 100% on GitHub Pages without server)
+    // 2. Client-side generation (100% in-browser on GitHub Pages)
     if (!result) {
-      result = await generateDocxClient(data);
+      const docxRes = await generateDocxClient(data, false);
+      const pdfRes = await generatePdfClient(data, true); // Automatically downloads PDF to phone
+      result = {
+        invoiceNumber: data.invoiceNumber,
+        filename: docxRes.filename,
+        url: docxRes.url,
+        pdfFilename: pdfRes.pdfFilename,
+        pdfUrl: pdfRes.pdfUrl,
+      };
     }
 
-    // Success: show message with download link
-    showStatus('success', 'Invoice generated successfully.', result.url, result.filename);
-    if (draftBadge) draftBadge.textContent = `Saved: ${result.filename}`;
+    // Success: show status with download buttons for both Word and PDF
+    lastGeneratedResult = result;
+    showStatus('success', 'Invoice generated successfully.', result.url, result.filename, result.pdfUrl, result.pdfFilename);
+    if (draftBadge) draftBadge.textContent = `Generated: ${result.invoiceNumber}`;
 
     // Save to local drafts history
     const records = JSON.parse(localStorage.getItem(historyKey) || '[]');
@@ -557,7 +694,7 @@ form.addEventListener('submit', async (event) => {
   } finally {
     if (printButton) {
       printButton.disabled = false;
-      printButton.textContent = 'Generate invoice DOCX';
+      printButton.textContent = 'Generate Invoice (Word & PDF)';
     }
   }
 });
