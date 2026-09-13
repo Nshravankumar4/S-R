@@ -461,8 +461,8 @@
       throw new Error('Word template engine is still loading. Please try again in a moment.');
     }
 
-    // 1. Fetch the master template
-    const resp = await fetch('templates/11048.docx');
+    // 1. Fetch the master template (always fresh, bypassing any browser cache)
+    const resp = await fetch('templates/11048.docx?v=' + Date.now());
     if (!resp.ok) {
       throw new Error('Master Word template not found at templates/11048.docx');
     }
@@ -526,9 +526,9 @@
     }
     zip.file('word/document.xml', xml);
 
-    // 5. Ensure the stamp+sign image is injected into docx media
+    // 5. Ensure the SR Transport stamp+sign image is injected into docx media
     try {
-      const imgResp = await fetch('stamp_with_sign.png');
+      const imgResp = await fetch('stamp_with_sign.png?v=' + Date.now());
       if (imgResp.ok) {
         const imgBuffer = await imgResp.arrayBuffer();
         zip.file('word/media/image3.png', imgBuffer);
