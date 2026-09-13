@@ -1,28 +1,59 @@
 /**
  * TransBill - Transport Invoice Generation & Management System
- * S&R TRANSPORT
+ * S&R TRANSPORT - Client-Side Studio
+ * 100% Online & Mobile Compatible on GitHub Pages
  */
 
 (function () {
+  'use strict';
+
   // --- DOM Elements ---
   const form = document.getElementById('invoiceForm');
   const statusBox = document.getElementById('statusBox');
-  const draftBadge = document.getElementById('draftStatus');
+  const draftStatus = document.getElementById('draftStatus');
   const headerModeBadge = document.getElementById('headerModeBadge');
   const editorHeading = document.getElementById('editorHeading');
-  const cancelEditBtnTop = document.getElementById('cancelEditBtnTop');
-  const cancelEditBtnBottom = document.getElementById('cancelEditBtnBottom');
+  const cancelEditBtn = document.getElementById('cancelEditBtn');
 
+  // Core Inputs
   const invoiceNumberInput = document.getElementById('invoiceNumber');
   const invoiceDateInput = document.getElementById('invoiceDate');
-  const toggleLockInvoiceBtn = document.getElementById('toggleLockInvoiceBtn');
 
-  const lrCountInput = document.getElementById('lrCountInput');
-  const incrementLrBtn = document.getElementById('incrementLrBtn');
-  const decrementLrBtn = document.getElementById('decrementLrBtn');
-  const addLrQuickBtn = document.getElementById('addLrQuickBtn');
-  const lrCardsContainer = document.getElementById('lrCardsContainer');
+  const customerNameInput = document.getElementById('customerName');
+  const customerGstinInput = document.getElementById('customerGstin');
+  const customerAddressInput = document.getElementById('customerAddress');
+  const customerStateInput = document.getElementById('customerState');
+  const customerStateCodeInput = document.getElementById('customerStateCode');
 
+  const consignorInput = document.getElementById('consignor');
+  const consigneeInput = document.getElementById('consignee');
+  const consignorAddressInput = document.getElementById('consignorAddress');
+  const consigneeAddressInput = document.getElementById('consigneeAddress');
+  const consignorGstinInput = document.getElementById('consignorGstin');
+  const consignorStateCodeInput = document.getElementById('consignorStateCode');
+
+  const lrNumberInput = document.getElementById('lrNumber');
+  const lrDateInput = document.getElementById('lrDate');
+  const loadingLocationInput = document.getElementById('loadingLocation');
+  const unloadingLocationInput = document.getElementById('unloadingLocation');
+  const vehicleNumberInput = document.getElementById('vehicleNumber');
+  const goodsDescriptionInput = document.getElementById('goodsDescription');
+  const packagesInput = document.getElementById('packages');
+  const weightInput = document.getElementById('weight');
+
+  const rateInput = document.getElementById('rate');
+  const otherChargesInput = document.getElementById('otherCharges');
+  const discountInput = document.getElementById('discount');
+  const taxModeInput = document.getElementById('taxMode');
+  const taxRateInput = document.getElementById('taxRate');
+  const remarksInput = document.getElementById('remarks');
+
+  // Strip Calculations
+  const calcFreight = document.getElementById('calcFreight');
+  const calcTaxable = document.getElementById('calcTaxable');
+  const calcGrandTotal = document.getElementById('calcGrandTotal');
+
+  // Action Buttons
   const printButton = document.getElementById('printButton');
   const downloadPdfButton = document.getElementById('downloadPdfButton');
   const downloadDocxButton = document.getElementById('downloadDocxButton');
@@ -34,741 +65,410 @@
   const chipGreenAgro = document.getElementById('chipGreenAgro');
   const chipClear = document.getElementById('chipClear');
 
+  // History Elements
   const historyTableBody = document.getElementById('historyTableBody');
   const historySearchInput = document.getElementById('historySearchInput');
   const refreshHistoryBtn = document.getElementById('refreshHistoryBtn');
   const historyCountBadge = document.getElementById('historyCountBadge');
 
-  // Modals
-  const confirmModal = document.getElementById('confirmModal');
-  const confirmModalTitle = document.getElementById('confirmModalTitle');
-  const confirmModalBody = document.getElementById('confirmModalBody');
-  const executeConfirmBtn = document.getElementById('executeConfirmBtn');
-  const cancelConfirmBtn = document.getElementById('cancelConfirmBtn');
-  const closeConfirmModalBtn = document.getElementById('closeConfirmModalBtn');
+  // Live Preview Elements
+  const previewCustomerName = document.getElementById('previewCustomerName');
+  const previewCustomerAddress = document.getElementById('previewCustomerAddress');
+  const previewCustomerGstin = document.getElementById('previewCustomerGstin');
+  const previewCustomerState = document.getElementById('previewCustomerState');
+  const previewCustomerStateCode = document.getElementById('previewCustomerStateCode');
 
-  const viewModal = document.getElementById('viewModal');
-  const viewModalTitle = document.getElementById('viewModalTitle');
-  const viewModalBadge = document.getElementById('viewModalBadge');
-  const viewModalBody = document.getElementById('viewModalBody');
-  const viewModalEditBtn = document.getElementById('viewModalEditBtn');
-  const viewModalWordBtn = document.getElementById('viewModalWordBtn');
-  const viewModalPdfBtn = document.getElementById('viewModalPdfBtn');
-  const viewModalCloseBtn = document.getElementById('viewModalCloseBtn');
-  const closeViewModalBtn = document.getElementById('closeViewModalBtn');
+  const previewInvoiceNumber = document.getElementById('previewInvoiceNumber');
+  const previewInvoiceDate = document.getElementById('previewInvoiceDate');
 
-  const previewTableBody = document.getElementById('previewTableBody');
+  const previewConsignor = document.getElementById('previewConsignor');
+  const previewConsignorAddress = document.getElementById('previewConsignorAddress');
+  const previewConsignorGstin = document.getElementById('previewConsignorGstin');
+  const previewConsignorStateCode = document.getElementById('previewConsignorStateCode');
 
-  const STORAGE_KEY = 'transbill_invoices_data_v2';
+  const previewConsignee = document.getElementById('previewConsignee');
+  const previewConsigneeAddress = document.getElementById('previewConsigneeAddress');
+  const previewConsigneeStateCode = document.getElementById('previewConsigneeStateCode');
+
+  const previewLrNumber = document.getElementById('previewLrNumber');
+  const previewLrDate = document.getElementById('previewLrDate');
+  const previewLoading = document.getElementById('previewLoading');
+  const previewUnloading = document.getElementById('previewUnloading');
+  const previewDescription = document.getElementById('previewDescription');
+  const previewVehicle = document.getElementById('previewVehicle');
+  const previewPackages = document.getElementById('previewPackages');
+  const previewWeight = document.getElementById('previewWeight');
+  const previewRate = document.getElementById('previewRate');
+  const previewFreight = document.getElementById('previewFreight');
+  const previewOtherCharges = document.getElementById('previewOtherCharges');
+  const previewTotal = document.getElementById('previewTotal');
+
+  const previewRemarks = document.getElementById('previewRemarks');
+  const previewGrandTotal = document.getElementById('previewGrandTotal');
+  const previewWords = document.getElementById('previewWords');
+
+  // Constants
+  const STORAGE_KEY = 'transbill_invoices_v3';
   const BASELINE_INVOICE_NUM = 11048;
 
-  // --- State ---
+  // App State
   const state = {
     mode: 'new', // 'new' | 'edit'
     editingInvoiceNumber: null,
-    isInvoiceLocked: true,
-    lrs: [
-      {
-        lrNumber: '11406',
-        lrDate: new Date().toISOString().slice(0, 10),
-        loadingLocation: 'Medchal',
-        unloadingLocation: 'Kalakal',
-        goodsDescription: 'Seeds',
-        vehicleNumber: 'AP 28 X 7948',
-        packages: '273',
-        weight: '10.000',
-        rate: '700',
-        otherCharges: '0',
-      },
-    ],
     invoices: [],
-    viewingInvoice: null,
-    lastGeneratedResult: null,
   };
 
-  // --- Helpers ---
-  const val = (id) => (document.getElementById(id)?.value || '').trim();
-  const setVal = (id, v) => {
-    const el = document.getElementById(id);
+  // --- Value Helpers ---
+  const val = (el) => (el?.value || '').trim();
+  const setVal = (el, v) => {
     if (el) el.value = v !== undefined && v !== null ? v : '';
   };
-  const text = (id, content) => {
-    const el = document.getElementById(id);
+  const setText = (el, content) => {
     if (el) el.textContent = content;
   };
 
-  const currency = (num) =>
-    `INR ${Number(num || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const formatCurrency = (num) => {
+    const n = Number(num) || 0;
+    return Number.isInteger(n) ? n.toLocaleString('en-IN') : n.toFixed(2);
+  };
 
-  const formatDate = (dateStr) => {
-    if (!dateStr) return '-';
-    const parts = dateStr.split('-');
+  const formatDate = (isoStr) => {
+    if (!isoStr) return '-';
+    if (/^\d{2}-\d{2}-\d{4}$/.test(isoStr)) return isoStr;
+    const parts = isoStr.split('-');
     if (parts.length === 3 && parts[0].length === 4) {
       return `${parts[2]}-${parts[1]}-${parts[0]}`;
     }
-    return dateStr;
+    return isoStr;
   };
 
-  const moneyWords = (num) => {
-    const n = Math.round(Number(num || 0));
-    if (n <= 0) return 'Zero Rupees Only';
-
-    const ones = [
-      '', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine',
-      'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen',
-      'Seventeen', 'Eighteen', 'Nineteen',
-    ];
-    const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
-
-    const convertBelowThousand = (val) => {
-      if (val < 20) return ones[val];
-      if (val < 100) return `${tens[Math.floor(val / 10)]} ${ones[val % 10]}`.trim();
-      return `${ones[Math.floor(val / 100)]} Hundred ${convertBelowThousand(val % 100)}`.trim();
-    };
-
-    let val = n;
-    const parts = [];
-    const units = [
-      { divisor: 10000000, label: 'Crore' },
-      { divisor: 100000, label: 'Lakh' },
-      { divisor: 1000, label: 'Thousand' },
-    ];
-
-    for (const { divisor, label } of units) {
-      const count = Math.floor(val / divisor);
-      if (count > 0) {
-        parts.push(`${convertBelowThousand(count)} ${label}`);
-        val %= divisor;
-      }
+  const parseDateToIso = (dStr) => {
+    if (!dStr) return new Date().toISOString().slice(0, 10);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dStr)) return dStr;
+    const parts = dStr.split('-');
+    if (parts.length === 3 && parts[2].length === 4) {
+      return `${parts[2]}-${parts[1]}-${parts[0]}`;
     }
-    if (val > 0) {
-      parts.push(convertBelowThousand(val));
-    }
-    return `Rupees ${parts.join(' ')} Only`.replace(/\s+/g, ' ');
+    return dStr;
   };
 
   const escapeXml = (unsafe) => {
-    return String(unsafe || '').replace(/[<>&'"]/g, (c) => {
-      switch (c) {
-        case '<': return '&lt;';
-        case '>': return '&gt;';
-        case '&': return '&amp;';
-        case "'": return '&apos;';
-        case '"': return '&quot;';
+    if (unsafe === undefined || unsafe === null) return '';
+    return String(unsafe)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&apos;');
+  };
+
+  const splitAddress = (address) => {
+    if (!address) return ['-', '-'];
+    const cleaned = address.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    const lines = cleaned.split('\n').map((l) => l.trim()).filter(Boolean);
+    if (lines.length === 0) return ['-', '-'];
+    if (lines.length === 1) {
+      const parts = lines[0].split(',');
+      if (parts.length > 2) {
+        const mid = Math.ceil(parts.length / 2);
+        return [parts.slice(0, mid).join(',').trim(), parts.slice(mid).join(',').trim()];
       }
-    });
-  };
-
-  const splitAddress = (addr) => {
-    const raw = String(addr || '').trim();
-    if (!raw) return ['-', '-'];
-    const lines = raw.split('\n').map((l) => l.trim()).filter(Boolean);
-    if (lines.length >= 2) return [lines[0], lines.slice(1).join(', ')];
-    if (raw.length > 40 && raw.includes(',')) {
-      const idx = raw.indexOf(',', 25);
-      if (idx !== -1) return [raw.slice(0, idx).trim(), raw.slice(idx + 1).trim()];
+      return [lines[0], '-'];
     }
-    return [raw, '-'];
+    const mid = Math.ceil(lines.length / 2);
+    return [lines.slice(0, mid).join(', '), lines.slice(mid).join(', ')];
   };
 
-  const downloadFile = (url, filename) => {
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  // --- Number to Words Converter (Indian System) ---
+  const numberToWords = (amount) => {
+    const num = Math.round(Number(amount) || 0);
+    if (num <= 0) return 'Rupees Zero Only';
+
+    const units = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine',
+      'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+    const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+
+    const convertThreeDigits = (n) => {
+      let str = '';
+      if (n >= 100) {
+        str += units[Math.floor(n / 100)] + ' Hundred ';
+        n %= 100;
+      }
+      if (n >= 20) {
+        str += tens[Math.floor(n / 10)] + ' ';
+        n %= 10;
+      }
+      if (n > 0) {
+        str += units[n] + ' ';
+      }
+      return str.trim();
+    };
+
+    let remaining = num;
+    let parts = [];
+
+    const crore = Math.floor(remaining / 10000000);
+    remaining %= 10000000;
+    if (crore > 0) parts.push(convertThreeDigits(crore) + ' Crore');
+
+    const lakh = Math.floor(remaining / 100000);
+    remaining %= 100000;
+    if (lakh > 0) parts.push(convertThreeDigits(lakh) + ' Lakh');
+
+    const thousand = Math.floor(remaining / 1000);
+    remaining %= 1000;
+    if (thousand > 0) parts.push(convertThreeDigits(thousand) + ' Thousand');
+
+    const hundred = remaining;
+    if (hundred > 0) parts.push(convertThreeDigits(hundred));
+
+    const words = parts.join(' ').replace(/\s+/g, ' ').trim();
+    return `Rupees ${words} Only`;
   };
 
-  const showStatus = (type, message, downloadUrl = null, filename = null, pdfUrl = null, pdfFilename = null) => {
+  // --- Status Banner Helper ---
+  const showStatus = (type, message, docxUrl = null, docxName = null, pdfUrl = null, pdfName = null) => {
     if (!statusBox) return;
-    statusBox.className = `status-box ${type}`;
-    if (type === 'success' && (downloadUrl || pdfUrl)) {
-      let html = `
-        <strong>${message || 'Invoice generated successfully.'}</strong><br>
-        <span>Invoice Number: <strong>${val('invoiceNumber')}</strong></span><br>
-        <div style="display:flex;gap:10px;margin-top:8px;flex-wrap:wrap;">
-      `;
-      if (pdfUrl && pdfFilename) {
-        html += `<a class="download-btn" style="background:#1d4ed8;" href="${pdfUrl}" download="${pdfFilename}">Download ${pdfFilename} (PDF)</a>`;
-      }
-      if (downloadUrl && filename) {
-        html += `<a class="download-btn" href="${downloadUrl}" download="${filename}">Download ${filename} (Word)</a>`;
-      }
-      html += `</div>`;
-      statusBox.innerHTML = html;
-    } else {
-      statusBox.textContent = message;
-    }
     statusBox.style.display = 'block';
-  };
+    statusBox.className = `status-box status-${type}`;
 
-  const hideStatus = () => {
-    if (statusBox) statusBox.style.display = 'none';
-  };
-
-  // --- Auto Invoice Numbering ---
-  const calculateNextInvoiceNumber = () => {
-    let maxNum = BASELINE_INVOICE_NUM - 1;
-
-    // Check all invoices in state
-    state.invoices.forEach((inv) => {
-      const match = String(inv.invoiceNumber || '').match(/\d+/);
-      if (match) {
-        const n = parseInt(match[0], 10);
-        if (n > maxNum) maxNum = n;
+    let html = `<p style="margin:0 0 4px 0;">${message}</p>`;
+    if (docxUrl || pdfUrl) {
+      html += '<div style="margin-top:8px; display:flex; gap:10px; flex-wrap:wrap;">';
+      if (pdfUrl) {
+        html += `<a href="${pdfUrl}" download="${pdfName || 'Invoice.pdf'}" class="status-download-btn pdf-btn" style="color:#fff;background:#15803d;padding:6px 12px;border-radius:6px;text-decoration:none;font-size:12px;font-weight:700;">📑 Download PDF</a>`;
       }
-    });
-
-    // Check localStorage invoices
-    const localInvoices = getLocalInvoices();
-    localInvoices.forEach((inv) => {
-      const match = String(inv.invoiceNumber || '').match(/\d+/);
-      if (match) {
-        const n = parseInt(match[0], 10);
-        if (n > maxNum) maxNum = n;
+      if (docxUrl) {
+        html += `<a href="${docxUrl}" download="${docxName || 'Invoice.docx'}" class="status-download-btn docx-btn" style="color:#fff;background:#0369a1;padding:6px 12px;border-radius:6px;text-decoration:none;font-size:12px;font-weight:700;">📄 Download Word (.docx)</a>`;
       }
-    });
+      html += '</div>';
+    }
+    statusBox.innerHTML = html;
 
-    return String(maxNum + 1);
-  };
-
-  const fetchNextInvoiceNumber = async () => {
-    if (state.mode === 'edit') return;
-
-    try {
-      const resp = await fetch('/api/invoices/next-number');
-      if (resp.ok) {
-        const data = await resp.json();
-        if (data.ok && data.nextInvoiceNumber) {
-          setVal('invoiceNumber', data.nextInvoiceNumber);
-          updatePreview();
-          return;
+    if (type === 'success' || type === 'info') {
+      setTimeout(() => {
+        if (statusBox.className.includes(`status-${type}`)) {
+          statusBox.style.display = 'none';
         }
-      }
-    } catch (e) {
-      // Server offline or static GitHub Pages
+      }, 10000);
     }
-
-    const nextLocal = calculateNextInvoiceNumber();
-    setVal('invoiceNumber', nextLocal);
-    updatePreview();
   };
 
-  // Toggle invoice lock
-  if (toggleLockInvoiceBtn) {
-    toggleLockInvoiceBtn.addEventListener('click', () => {
-      if (state.mode === 'edit') {
-        alert('Invoice Number cannot be changed while editing an existing invoice.');
-        return;
-      }
-      state.isInvoiceLocked = !state.isInvoiceLocked;
-      if (state.isInvoiceLocked) {
-        invoiceNumberInput.readOnly = true;
-        toggleLockInvoiceBtn.textContent = '🔒 Auto';
-        toggleLockInvoiceBtn.title = 'Auto-assigned next number. Click to edit manually.';
-        fetchNextInvoiceNumber();
-      } else {
-        invoiceNumberInput.readOnly = false;
-        toggleLockInvoiceBtn.textContent = '🔓 Edit';
-        toggleLockInvoiceBtn.title = 'Manual mode enabled. Click to revert to auto-number.';
-        invoiceNumberInput.focus();
-      }
-    });
-  }
-
-  // --- Calculations ---
+  // --- Calculations & Live Preview ---
   const calculateTotals = () => {
-    let totalWeight = 0;
-    let totalFreight = 0;
-    let totalLineOthers = 0;
+    const weight = parseFloat(val(weightInput)) || 0;
+    const rate = parseFloat(val(rateInput)) || 0;
+    const freight = weight * rate;
 
-    state.lrs.forEach((lr) => {
-      const w = parseFloat(lr.weight) || 0;
-      const r = parseFloat(lr.rate) || 0;
-      const oc = parseFloat(lr.otherCharges) || 0;
-      const f = w * r;
-      totalWeight += w;
-      totalFreight += f;
-      totalLineOthers += oc;
-    });
+    const otherCharges = parseFloat(val(otherChargesInput)) || 0;
+    const discount = parseFloat(val(discountInput)) || 0;
+    const taxable = Math.max(0, freight + otherCharges - discount);
 
-    const overallOthers = parseFloat(val('overallOtherCharges')) || 0;
-    const discount = parseFloat(val('discount')) || 0;
-    const allOthers = totalLineOthers > 0 ? totalLineOthers : overallOthers;
+    const taxMode = val(taxModeInput) || 'none';
+    const taxRate = parseFloat(val(taxRateInput)) || 0;
+    let taxAmount = 0;
 
-    const taxable = totalFreight + allOthers - discount;
-    const taxMode = val('taxMode');
-    const taxRate = parseFloat(val('taxRate')) || 0;
-    let tax = 0;
-    if (taxMode === 'igst' || taxMode === 'split') {
-      tax = taxable * (taxRate / 100);
+    if (taxMode !== 'none' && taxRate > 0) {
+      taxAmount = (taxable * taxRate) / 100;
     }
-    const grandTotal = Math.max(0, Math.round(taxable + tax));
+
+    const grandTotal = Math.round(taxable + taxAmount);
+    const words = numberToWords(grandTotal);
 
     return {
-      lrCount: state.lrs.length,
-      totalWeight,
-      totalFreight,
-      allOthers,
+      weight,
+      rate,
+      freight,
+      otherCharges,
       discount,
       taxable,
-      tax,
+      taxMode,
+      taxRate,
+      taxAmount,
       grandTotal,
-      words: moneyWords(grandTotal),
+      words,
     };
   };
 
-  // --- Live Preview Synchronization ---
   const updatePreview = () => {
-    const totals = calculateTotals();
+    const calc = calculateTotals();
 
-    // Bill header & customer details
-    const invNum = val('invoiceNumber') || '11049';
-    text('previewInvoiceNumber', invNum);
-    text('previewInvoiceDate', formatDate(val('invoiceDate')));
+    // Live Calculation Strip
+    setText(calcFreight, `INR ${calc.freight.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+    setText(calcTaxable, `INR ${calc.taxable.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+    setText(calcGrandTotal, `INR ${calc.grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
 
-    const custName = val('customerName') || 'CUSTOMER COMPANY NAME';
-    text('previewCustomerName', custName);
-    text('previewCustomerAddress', val('customerAddress') || '-');
-    text('previewCustomerGstin', val('customerGstin') || '-');
-    text('previewCustomerState', val('customerState') || '-');
-    text('previewCustomerStateCode', val('customerStateCode') || '-');
+    // Customer & Header
+    const customer = val(customerNameInput) || 'GREEN AGREVOLUTION PRIVATE LTD';
+    const gstin = val(customerGstinInput) || '09AAECG6456H1ZC';
+    const addr = val(customerAddressInput) || 'B-103/104, Gomti Nagar, Vibhuti Khand Gomti Nagar,\nLucknow - 226010\nUTTAR PRADESH';
+    const stateVal = val(customerStateInput) || 'UTTAR PRADESH';
+    const stateCodeVal = val(customerStateCodeInput) || '09/UP';
+
+    const invNum = val(invoiceNumberInput) || '11048';
+    const invDate = formatDate(val(invoiceDateInput) || new Date().toISOString().slice(0, 10));
+
+    setText(previewCustomerName, customer);
+    setText(previewCustomerGstin, gstin);
+    if (previewCustomerAddress) previewCustomerAddress.innerHTML = addr.replace(/\n/g, '<br>');
+    setText(previewCustomerState, stateVal);
+    setText(previewCustomerStateCode, stateCodeVal);
+
+    setText(previewInvoiceNumber, invNum);
+    setText(previewInvoiceDate, invDate);
 
     // Parties
-    text('previewConsignor', val('consignor') || custName || '-');
-    text('previewConsignorAddress', val('consignorAddress') || val('customerAddress') || '-');
-    text('previewConsignorGstin', val('consignorGstin') || val('customerGstin') || '-');
-    text('previewConsignorStateCode', val('consignorStateCode') || val('customerStateCode') || '-');
+    const consignor = val(consignorInput) || customer;
+    const consignorAddr = val(consignorAddressInput) || addr;
+    const consignorGstin = val(consignorGstinInput) || (gstin ? `36${gstin.slice(2)}` : '36AAECG6456H1ZF');
+    const consignorStateCode = val(consignorStateCodeInput) || '36/TS';
 
-    text('previewConsignee', val('consignee') || custName || '-');
-    text('previewConsigneeAddress', val('consigneeAddress') || val('customerAddress') || '-');
-    text('previewConsigneeStateCode', val('consigneeStateCode') || val('customerStateCode') || '-');
+    const consignee = val(consigneeInput) || customer;
+    const consigneeAddr = val(consigneeAddressInput) || addr;
+    const consigneeStateCode = consignorStateCode;
 
-    // Multi-row preview table
-    if (previewTableBody) {
-      previewTableBody.innerHTML = '';
-      const invDate = val('invoiceDate');
+    setText(previewConsignor, consignor);
+    if (previewConsignorAddress) previewConsignorAddress.innerHTML = consignorAddr.replace(/\n/g, '<br>');
+    setText(previewConsignorGstin, consignorGstin);
+    setText(previewConsignorStateCode, consignorStateCode);
 
-      state.lrs.forEach((lr, idx) => {
-        const w = parseFloat(lr.weight) || 0;
-        const r = parseFloat(lr.rate) || 0;
-        const oc = parseFloat(lr.otherCharges) || 0;
-        const f = w * r;
-        const lineTotal = f + oc;
+    setText(previewConsignee, consignee);
+    if (previewConsigneeAddress) previewConsigneeAddress.innerHTML = consigneeAddr.replace(/\n/g, '<br>');
+    setText(previewConsigneeStateCode, consigneeStateCode);
 
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${idx + 1}</td>
-          <td>${lr.lrNumber || '-'}</td>
-          <td>${formatDate(lr.lrDate || invDate)}</td>
-          <td>${lr.loadingLocation || '-'}</td>
-          <td>${lr.unloadingLocation || '-'}</td>
-          <td>${lr.goodsDescription || '-'}</td>
-          <td>${lr.vehicleNumber || '-'}</td>
-          <td>${lr.packages || '-'}</td>
-          <td>${w > 0 ? w.toFixed(3) : '-'}</td>
-          <td>${r > 0 ? r.toLocaleString('en-IN') : '-'}</td>
-          <td>${f > 0 ? f.toLocaleString('en-IN', { maximumFractionDigits: 2 }) : '-'}</td>
-          <td>${oc > 0 ? oc.toLocaleString('en-IN') : '0'}</td>
-          <td>${lineTotal > 0 ? lineTotal.toLocaleString('en-IN', { maximumFractionDigits: 2 }) : '-'}</td>
-        `;
-        previewTableBody.appendChild(tr);
-      });
+    // Trip & Table Row 1
+    setText(previewLrNumber, val(lrNumberInput) || '11403');
+    setText(previewLrDate, formatDate(val(lrDateInput) || val(invoiceDateInput) || new Date().toISOString().slice(0, 10)));
+    setText(previewLoading, val(loadingLocationInput) || 'Medchal');
+    setText(previewUnloading, val(unloadingLocationInput) || 'Kalakal');
+    setText(previewDescription, val(goodsDescriptionInput) || 'Seeds');
+    setText(previewVehicle, val(vehicleNumberInput) || 'AP 28 X 7948');
+    setText(previewPackages, val(packagesInput) || '273');
+    setText(previewWeight, calc.weight > 0 ? calc.weight.toFixed(3) : '10.000');
+    setText(previewRate, calc.rate > 0 ? String(calc.rate) : '700');
+    setText(previewFreight, formatCurrency(calc.freight));
+    setText(previewOtherCharges, calc.otherCharges > 0 ? String(calc.otherCharges) : '0');
+    setText(previewTotal, formatCurrency(calc.freight + calc.otherCharges));
 
-      // Pad with blank rows up to at least 4 rows for consistent layout
-      for (let p = state.lrs.length; p < 4; p++) {
-        const emptyTr = document.createElement('tr');
-        emptyTr.innerHTML = '<td colspan="13">&nbsp;</td>';
-        previewTableBody.appendChild(emptyTr);
-      }
-    }
-
-    // Totals & Note row
-    text('previewRemarks', val('remarks') || 'NA');
-    text('previewGrandTotal', `₹ ${totals.grandTotal.toLocaleString('en-IN')}`);
-    text('previewWords', totals.words);
-
-    // Form calculation strip
-    text('calcLrCount', String(totals.lrCount));
-    text('calcTotalWeight', `${totals.totalWeight.toFixed(3)} MT`);
-    text('calcFreight', currency(totals.totalFreight));
-    text('calcTaxable', currency(totals.taxable));
-    text('calcGrandTotal', currency(totals.grandTotal));
+    // Footer & Notes
+    setText(previewRemarks, val(remarksInput) || 'NA');
+    setText(previewGrandTotal, `₹ ${formatCurrency(calc.grandTotal)}`);
+    setText(previewWords, calc.words);
   };
 
-  // --- Dynamic LR Cards Rendering ---
-  const renderLrCards = () => {
-    if (!lrCardsContainer) return;
-    lrCardsContainer.innerHTML = '';
-
-    if (lrCountInput) lrCountInput.value = state.lrs.length;
-
-    state.lrs.forEach((lr, idx) => {
-      const w = parseFloat(lr.weight) || 0;
-      const r = parseFloat(lr.rate) || 0;
-      const oc = parseFloat(lr.otherCharges) || 0;
-      const f = w * r;
-      const lineTotal = f + oc;
-
-      const card = document.createElement('div');
-      card.className = 'lr-card';
-      card.dataset.index = idx;
-
-      card.innerHTML = `
-        <div class="lr-card-header">
-          <div>
-            <span class="lr-card-title">LR #${idx + 1}</span>
-            <span class="lr-card-summary">(${lr.vehicleNumber || 'No vehicle'} | ${w > 0 ? w.toFixed(3) + ' MT' : '0 MT'})</span>
-          </div>
-          ${
-            state.lrs.length > 1
-              ? `<button type="button" class="lr-remove-btn" data-remove-lr="${idx}">✕ Remove LR</button>`
-              : ''
-          }
-        </div>
-        <div class="form-grid three">
-          <label>
-            LR Number <span class="required-star">*</span>
-            <input type="text" data-field="lrNumber" value="${lr.lrNumber || ''}" placeholder="e.g. 11406" required>
-          </label>
-          <label>
-            LR Date <span class="required-star">*</span>
-            <input type="date" data-field="lrDate" value="${lr.lrDate || val('invoiceDate') || ''}" required>
-          </label>
-          <label>
-            Vehicle Number <span class="required-star">*</span>
-            <input type="text" data-field="vehicleNumber" value="${lr.vehicleNumber || ''}" placeholder="e.g. AP 28 X 7948" style="text-transform:uppercase" required>
-          </label>
-          <label>
-            Loading Location
-            <input type="text" data-field="loadingLocation" value="${lr.loadingLocation || ''}" placeholder="e.g. Medchal">
-          </label>
-          <label>
-            Unloading Location
-            <input type="text" data-field="unloadingLocation" value="${lr.unloadingLocation || ''}" placeholder="e.g. Kalakal">
-          </label>
-          <label>
-            Goods Description
-            <input type="text" data-field="goodsDescription" value="${lr.goodsDescription || ''}" placeholder="e.g. Seeds">
-          </label>
-          <label>
-            No. of Bags / Packages
-            <input type="number" min="0" data-field="packages" value="${lr.packages || ''}" placeholder="e.g. 273">
-          </label>
-          <label>
-            Weight (MT / kg) <span class="required-star">*</span>
-            <input type="number" min="0" step="0.001" data-field="weight" value="${lr.weight || ''}" placeholder="10.000" required>
-          </label>
-          <label>
-            Rate (INR) <span class="required-star">*</span>
-            <input type="number" min="0" step="0.01" data-field="rate" value="${lr.rate || ''}" placeholder="700" required>
-          </label>
-          <label>
-            Other Charges (INR)
-            <input type="number" min="0" step="0.01" data-field="otherCharges" value="${lr.otherCharges || '0'}" placeholder="0">
-          </label>
-          <div class="lr-line-calc span-2">
-            <span>Line Freight: <strong>${currency(f)}</strong></span>
-            <span>Line Total: <strong>${currency(lineTotal)}</strong></span>
-          </div>
-        </div>
-      `;
-
-      // Input change listener for this card
-      card.querySelectorAll('input').forEach((input) => {
-        input.addEventListener('input', (e) => {
-          const field = e.target.dataset.field;
-          lr[field] = e.target.value.trim();
-
-          // Live update the card header summary and line calc
-          const currentW = parseFloat(lr.weight) || 0;
-          const currentR = parseFloat(lr.rate) || 0;
-          const currentOc = parseFloat(lr.otherCharges) || 0;
-          const currentF = currentW * currentR;
-          const currentTotal = currentF + currentOc;
-
-          const summaryEl = card.querySelector('.lr-card-summary');
-          if (summaryEl) {
-            summaryEl.textContent = `(${lr.vehicleNumber || 'No vehicle'} | ${currentW > 0 ? currentW.toFixed(3) + ' MT' : '0 MT'})`;
-          }
-          const calcEl = card.querySelector('.lr-line-calc');
-          if (calcEl) {
-            calcEl.innerHTML = `
-              <span>Line Freight: <strong>${currency(currentF)}</strong></span>
-              <span>Line Total: <strong>${currency(currentTotal)}</strong></span>
-            `;
-          }
-
-          updatePreview();
-        });
-      });
-
-      // Remove button listener
-      const removeBtn = card.querySelector('[data-remove-lr]');
-      if (removeBtn) {
-        removeBtn.addEventListener('click', () => {
-          removeLrAtIndex(idx);
-        });
-      }
-
-      lrCardsContainer.appendChild(card);
-    });
-
-    updatePreview();
-  };
-
-  const addLr = () => {
-    if (state.lrs.length >= 10) {
-      alert('Maximum 10 LR entries allowed per invoice.');
-      return;
-    }
-    const lastLr = state.lrs[state.lrs.length - 1] || {};
-    state.lrs.push({
-      lrNumber: '',
-      lrDate: val('invoiceDate') || new Date().toISOString().slice(0, 10),
-      loadingLocation: lastLr.loadingLocation || 'Medchal',
-      unloadingLocation: lastLr.unloadingLocation || 'Kalakal',
-      goodsDescription: lastLr.goodsDescription || 'Seeds',
-      vehicleNumber: '',
-      packages: '',
-      weight: '',
-      rate: lastLr.rate || '700',
-      otherCharges: '0',
-    });
-    renderLrCards();
-    // Scroll to the new card
-    setTimeout(() => {
-      const cards = lrCardsContainer.querySelectorAll('.lr-card');
-      if (cards.length) cards[cards.length - 1].scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 50);
-  };
-
-  const removeLrAtIndex = (idx) => {
-    if (state.lrs.length <= 1) {
-      alert('At least one LR row is required.');
-      return;
-    }
-    state.lrs.splice(idx, 1);
-    renderLrCards();
-  };
-
-  if (incrementLrBtn) incrementLrBtn.addEventListener('click', addLr);
-  if (addLrQuickBtn) addLrQuickBtn.addEventListener('click', addLr);
-  if (decrementLrBtn) {
-    decrementLrBtn.addEventListener('click', () => {
-      if (state.lrs.length > 1) {
-        removeLrAtIndex(state.lrs.length - 1);
-      }
-    });
-  }
-
-  // --- Mandatory Field Validation ---
-  const validateForm = () => {
-    hideStatus();
-
-    // 1. Validate top fields
-    const requiredTopFields = [
-      { id: 'invoiceNumber', name: 'Invoice Number' },
-      { id: 'invoiceDate', name: 'Invoice Date' },
-      { id: 'customerName', name: 'Customer / Bill To Name' },
-      { id: 'customerGstin', name: 'Customer GSTIN' },
-      { id: 'customerAddress', name: 'Billing Address' },
-      { id: 'customerState', name: 'State' },
-      { id: 'customerStateCode', name: 'State Code' },
-    ];
-
-    for (const item of requiredTopFields) {
-      const value = val(item.id);
-      if (!value) {
-        const el = document.getElementById(item.id);
-        el?.focus();
-        el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        showStatus('error', `Mandatory field missing: Please enter ${item.name}.`);
-        return false;
-      }
-    }
-
-    // 2. Validate LR rows
-    if (!state.lrs || state.lrs.length === 0) {
-      showStatus('error', 'Please add at least one LR entry.');
-      return false;
-    }
-
-    for (let i = 0; i < state.lrs.length; i++) {
-      const lr = state.lrs[i];
-      const cardEl = lrCardsContainer.querySelector(`.lr-card[data-index="${i}"]`);
-
-      if (!lr.lrNumber) {
-        cardEl?.querySelector('[data-field="lrNumber"]')?.focus();
-        cardEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        showStatus('error', `Mandatory field missing: Please enter LR Number for LR #${i + 1}.`);
-        return false;
-      }
-      if (!lr.lrDate) {
-        cardEl?.querySelector('[data-field="lrDate"]')?.focus();
-        cardEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        showStatus('error', `Mandatory field missing: Please enter LR Date for LR #${i + 1}.`);
-        return false;
-      }
-      if (!lr.vehicleNumber) {
-        cardEl?.querySelector('[data-field="vehicleNumber"]')?.focus();
-        cardEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        showStatus('error', `Mandatory field missing: Please enter Vehicle Number for LR #${i + 1}.`);
-        return false;
-      }
-      const weight = parseFloat(lr.weight);
-      if (isNaN(weight) || weight <= 0) {
-        cardEl?.querySelector('[data-field="weight"]')?.focus();
-        cardEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        showStatus('error', `Mandatory field missing: Please enter a valid Weight (> 0) for LR #${i + 1}.`);
-        return false;
-      }
-      const rate = parseFloat(lr.rate);
-      if (isNaN(rate) || rate <= 0) {
-        cardEl?.querySelector('[data-field="rate"]')?.focus();
-        cardEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        showStatus('error', `Mandatory field missing: Please enter a valid Rate (> 0) for LR #${i + 1}.`);
-        return false;
-      }
-    }
-
-    return true;
-  };
-
-  // --- Serialization ---
+  // --- Serialize Invoice Data ---
   const serializeInvoiceData = () => {
-    const totals = calculateTotals();
-    const lrsWithCalcs = state.lrs.map((lr, idx) => {
-      const w = parseFloat(lr.weight) || 0;
-      const r = parseFloat(lr.rate) || 0;
-      const oc = parseFloat(lr.otherCharges) || 0;
-      const f = w * r;
-      return {
-        sl_no: String(idx + 1),
-        lrNumber: lr.lrNumber || '',
-        lrDate: lr.lrDate || val('invoiceDate'),
-        loadingLocation: lr.loadingLocation || '',
-        unloadingLocation: lr.unloadingLocation || '',
-        goodsDescription: lr.goodsDescription || '',
-        vehicleNumber: lr.vehicleNumber || '',
-        packages: lr.packages || '-',
-        weight: lr.weight || '0',
-        rate: lr.rate || '0',
-        freight: f > 0 ? f.toLocaleString('en-IN') : '0',
-        otherCharges: lr.otherCharges || '0',
-        total: (f + oc).toLocaleString('en-IN'),
-      };
-    });
+    const calc = calculateTotals();
+    const invNum = val(invoiceNumberInput) || String(BASELINE_INVOICE_NUM);
+    const invDate = val(invoiceDateInput) || new Date().toISOString().slice(0, 10);
+    const lrNum = val(lrNumberInput) || '11403';
+    const lrDate = val(lrDateInput) || invDate;
+
+    const custName = val(customerNameInput);
+    const custAddr = val(customerAddressInput);
+    const custGstin = val(customerGstinInput);
+    const custState = val(customerStateInput);
+    const custStateCode = val(customerStateCodeInput);
 
     return {
-      invoiceNumber: val('invoiceNumber'),
-      invoiceDate: val('invoiceDate'),
-      customerName: val('customerName'),
-      customerGstin: val('customerGstin'),
-      customerAddress: val('customerAddress'),
-      customerState: val('customerState'),
-      customerStateCode: val('customerStateCode'),
-      consignor: val('consignor') || val('customerName'),
-      consignorAddress: val('consignorAddress') || val('customerAddress'),
-      consignorGstin: val('consignorGstin') || val('customerGstin'),
-      consignorStateCode: val('consignorStateCode') || val('customerStateCode'),
-      consignee: val('consignee') || val('customerName'),
-      consigneeAddress: val('consigneeAddress') || val('customerAddress'),
-      consigneeStateCode: val('consigneeStateCode') || val('customerStateCode'),
-      lrs: lrsWithCalcs,
-      otherCharges: val('overallOtherCharges') || '0',
-      discount: val('discount') || '0',
-      taxMode: val('taxMode') || 'none',
-      taxRate: val('taxRate') || '0',
-      remarks: val('remarks') || 'NA',
-      grandTotal: totals.grandTotal.toLocaleString('en-IN'),
-      amountInWords: totals.words,
+      invoiceNumber: invNum,
+      invoiceDate: invDate,
+      customerName: custName,
+      customerGstin: custGstin,
+      customerAddress: custAddr,
+      customerState: custState,
+      customerStateCode: custStateCode,
+
+      consignor: val(consignorInput) || custName,
+      consignorAddress: val(consignorAddressInput) || custAddr,
+      consignorGstin: val(consignorGstinInput) || custGstin,
+      consignorStateCode: val(consignorStateCodeInput) || custStateCode,
+
+      consignee: val(consigneeInput) || custName,
+      consigneeAddress: val(consigneeAddressInput) || custAddr,
+      consigneeStateCode: val(consignorStateCodeInput) || custStateCode,
+
+      lrNumber: lrNum,
+      lrDate: lrDate,
+      loadingLocation: val(loadingLocationInput),
+      unloadingLocation: val(unloadingLocationInput),
+      vehicleNumber: val(vehicleNumberInput),
+      goodsDescription: val(goodsDescriptionInput),
+      packages: val(packagesInput),
+      weight: val(weightInput),
+
+      rate: val(rateInput),
+      otherCharges: val(otherChargesInput) || '0',
+      discount: val(discountInput) || '0',
+      taxMode: val(taxModeInput) || 'none',
+      taxRate: val(taxRateInput) || '0',
+      remarks: val(remarksInput) || 'NA',
+
+      freight: calc.freight,
+      taxable: calc.taxable,
+      grandTotal: calc.grandTotal,
+      amountInWords: calc.words,
       updatedAt: new Date().toISOString(),
     };
   };
 
-  // --- Confirmation Modal Flow ---
-  const openConfirmModal = () => {
-    if (!validateForm()) return;
+  // --- Validate Mandatory Fields ---
+  const validateForm = () => {
+    const requiredFields = [
+      { el: invoiceNumberInput, name: 'Invoice Number' },
+      { el: invoiceDateInput, name: 'Invoice Date' },
+      { el: customerNameInput, name: 'Customer Name' },
+      { el: customerGstinInput, name: 'Customer GSTIN' },
+      { el: customerAddressInput, name: 'Customer Address' },
+      { el: customerStateInput, name: 'Customer State' },
+      { el: customerStateCodeInput, name: 'Customer State Code' },
+      { el: lrNumberInput, name: 'LR Number' },
+      { el: lrDateInput, name: 'LR Date' },
+      { el: loadingLocationInput, name: 'Loading Location' },
+      { el: unloadingLocationInput, name: 'Unloading Location' },
+      { el: vehicleNumberInput, name: 'Vehicle Number' },
+      { el: goodsDescriptionInput, name: 'Goods Description' },
+      { el: packagesInput, name: 'No. of Bags' },
+      { el: weightInput, name: 'Weight' },
+      { el: rateInput, name: 'Rate' },
+    ];
 
-    const data = serializeInvoiceData();
-    const isEdit = state.mode === 'edit';
-
-    confirmModalTitle.textContent = isEdit
-      ? `Confirm Resubmit & Update: Invoice #${data.invoiceNumber}`
-      : `Confirm Generation: New Invoice #${data.invoiceNumber}`;
-
-    executeConfirmBtn.textContent = isEdit ? 'Resubmit & Update' : 'Yes, Generate Invoice';
-
-    let lrsHtml = `
-      <table class="modal-lr-table">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>LR No</th>
-            <th>Vehicle</th>
-            <th>Weight</th>
-            <th>Rate</th>
-            <th>Freight</th>
-          </tr>
-        </thead>
-        <tbody>
-    `;
-
-    data.lrs.forEach((lr, i) => {
-      lrsHtml += `
-        <tr>
-          <td>${i + 1}</td>
-          <td><b>${lr.lrNumber}</b> (${formatDate(lr.lrDate)})</td>
-          <td>${lr.vehicleNumber}</td>
-          <td>${lr.weight} MT</td>
-          <td>₹${lr.rate}</td>
-          <td><b>₹${lr.freight}</b></td>
-        </tr>
-      `;
-    });
-    lrsHtml += `</tbody></table>`;
-
-    confirmModalBody.innerHTML = `
-      <div class="confirm-summary-grid">
-        <div><span>Invoice Number</span><strong>#${data.invoiceNumber}</strong></div>
-        <div><span>Invoice Date</span><strong>${formatDate(data.invoiceDate)}</strong></div>
-        <div style="grid-column:span 2"><span>Billed Customer</span><strong>${data.customerName}</strong></div>
-        <div><span>Total LR Count</span><strong>${data.lrs.length} LR(s)</strong></div>
-        <div><span>Action</span><strong style="color:${isEdit ? '#b45309' : '#027a48'}">${isEdit ? 'Overwriting Existing Record' : 'Creating New Record'}</strong></div>
-      </div>
-      <div><strong>LR Details:</strong></div>
-      ${lrsHtml}
-      <div class="modal-grand-total-box">
-        <span>Grand Total Amount</span>
-        <strong>₹ ${data.grandTotal}</strong>
-        <small>${data.amountInWords}</small>
-      </div>
-    `;
-
-    confirmModal.style.display = 'flex';
+    for (const field of requiredFields) {
+      if (!val(field.el)) {
+        field.el?.focus();
+        showStatus('error', `Please fill in the required field: ${field.name}`);
+        return false;
+      }
+    }
+    return true;
   };
 
-  const closeConfirmModal = () => {
-    confirmModal.style.display = 'none';
+  // --- File Download Utility ---
+  const downloadFile = (blobUrl, filename) => {
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      document.body.removeChild(a);
+    }, 150);
   };
 
-  if (cancelConfirmBtn) cancelConfirmBtn.addEventListener('click', closeConfirmModal);
-  if (closeConfirmModalBtn) closeConfirmModalBtn.addEventListener('click', closeConfirmModal);
-
-  // --- Client-Side Multi-Row DOCX Generation ---
+  // --- Client-Side Word DOCX Generation (100% Online) ---
   const generateDocxClient = async (data, autoDownload = false) => {
     if (!window.JSZip) {
-      throw new Error('Word template engine is still loading. Please try again in a few seconds.');
+      throw new Error('Word template engine is still loading. Please try again in a moment.');
     }
 
+    // 1. Fetch the master template
     const resp = await fetch('templates/11048.docx');
     if (!resp.ok) {
       throw new Error('Master Word template not found at templates/11048.docx');
     }
     const arrayBuffer = await resp.arrayBuffer();
 
+    // 2. Unzip the docx
     const zip = await window.JSZip.loadAsync(arrayBuffer);
     const docFile = zip.file('word/document.xml');
     if (!docFile) {
@@ -776,54 +476,14 @@
     }
     let xml = await docFile.async('string');
 
-    // Extract table rows using regex
-    const rowMatches = xml.match(/<w:tr\b[\s\S]*?<\/w:tr>/g);
-    if (!rowMatches || rowMatches.length < 13) {
-      throw new Error('Unexpected document layout in master template.');
-    }
-
-    const row9 = rowMatches[9];
-    const row10 = rowMatches[10];
-
-    const generatedRows = [];
-    const rawLrs = data.lrs || [];
-
-    rawLrs.forEach((lr, idx) => {
-      const w = parseFloat(lr.weight) || 0;
-      const r = parseFloat(lr.rate) || 0;
-      const oc = parseFloat(lr.otherCharges) || 0;
-      const f = w * r;
-      const lineTotal = f + oc;
-
-      let rXml = row9;
-      rXml = rXml.split('{{sl_no}}').join(String(idx + 1));
-      rXml = rXml.split('{{lr_number}}').join(escapeXml(lr.lrNumber || '-'));
-      rXml = rXml.split('{{lr_date}}').join(escapeXml(formatDate(lr.lrDate || data.invoiceDate)));
-      rXml = rXml.split('{{loading_location}}').join(escapeXml(lr.loadingLocation || '-'));
-      rXml = rXml.split('{{unloading_location}}').join(escapeXml(lr.unloadingLocation || '-'));
-      rXml = rXml.split('{{goods_description}}').join(escapeXml(lr.goodsDescription || '-'));
-      rXml = rXml.split('{{vehicle_number}}').join(escapeXml(lr.vehicleNumber || '-'));
-      rXml = rXml.split('{{packages}}').join(escapeXml(lr.packages || '-'));
-      rXml = rXml.split('{{weight}}').join(w > 0 ? w.toFixed(3) : '-');
-      rXml = rXml.split('{{rate}}').join(r > 0 ? String(r) : '-');
-      rXml = rXml.split('{{freight}}').join(Number.isInteger(f) ? f.toLocaleString('en-IN') : f.toFixed(2));
-      rXml = rXml.split('{{other_charges}}').join(oc > 0 ? String(oc) : '0');
-      rXml = rXml.split('{{total}}').join(Number.isInteger(lineTotal) ? lineTotal.toLocaleString('en-IN') : lineTotal.toFixed(2));
-
-      generatedRows.push(rXml);
-    });
-
-    // Pad with blank row10 up to 4 rows
-    for (let p = generatedRows.length; p < 4; p++) {
-      generatedRows.push(row10);
-    }
-
-    // Replace the 4 data rows in master template
-    const block4 = rowMatches[9] + rowMatches[10] + rowMatches[11] + rowMatches[12];
-    xml = xml.replace(block4, generatedRows.join(''));
-
-    // Replace document-level placeholders
+    // 3. Prepare placeholders
     const [addr1, addr2] = splitAddress(data.customerAddress);
+    const w = parseFloat(data.weight) || 0;
+    const r = parseFloat(data.rate) || 0;
+    const oc = parseFloat(data.otherCharges) || 0;
+    const f = w * r;
+    const lineTotal = f + oc;
+
     const docMapping = {
       '{{invoice_number}}': data.invoiceNumber || '-',
       '{{invoice_date}}': formatDate(data.invoiceDate),
@@ -840,16 +500,45 @@
       '{{consignee}}': data.consignee || data.customerName || '-',
       '{{consignee_address}}': data.consigneeAddress || addr1,
       '{{consignee_state_code}}': data.consigneeStateCode || data.customerStateCode || '-',
+
+      '{{sl_no}}': '1',
+      '{{lr_number}}': data.lrNumber || '-',
+      '{{lr_date}}': formatDate(data.lrDate || data.invoiceDate),
+      '{{loading_location}}': data.loadingLocation || '-',
+      '{{unloading_location}}': data.unloadingLocation || '-',
+      '{{goods_description}}': data.goodsDescription || '-',
+      '{{vehicle_number}}': data.vehicleNumber || '-',
+      '{{packages}}': data.packages || '-',
+      '{{weight}}': w > 0 ? w.toFixed(3) : '-',
+      '{{rate}}': r > 0 ? String(r) : '-',
+      '{{freight}}': Number.isInteger(f) ? f.toLocaleString('en-IN') : f.toFixed(2),
+      '{{other_charges}}': oc > 0 ? String(oc) : '0',
+      '{{total}}': Number.isInteger(lineTotal) ? lineTotal.toLocaleString('en-IN') : lineTotal.toFixed(2),
+
       '{{remarks}}': data.remarks || 'NA',
-      '{{grand_total}}': data.grandTotal || '0',
-      '{{amount_in_words}}': data.amountInWords || 'Zero Rupees Only',
+      '{{grand_total}}': formatCurrency(data.grandTotal),
+      '{{amount_in_words}}': data.amountInWords || 'Rupees Zero Only',
     };
 
+    // 4. Substitute placeholders
     for (const [ph, valStr] of Object.entries(docMapping)) {
       xml = xml.split(ph).join(escapeXml(valStr));
     }
-
     zip.file('word/document.xml', xml);
+
+    // 5. Ensure the stamp+sign image is injected into docx media
+    try {
+      const imgResp = await fetch('stamp_with_sign.png');
+      if (imgResp.ok) {
+        const imgBuffer = await imgResp.arrayBuffer();
+        zip.file('word/media/image3.png', imgBuffer);
+        zip.file('word/media/image4.png', imgBuffer);
+      }
+    } catch (e) {
+      // If stamp_with_sign.png fetch fails, template already contains it
+    }
+
+    // 6. Generate DOCX Blob
     const blob = await zip.generateAsync({
       type: 'blob',
       mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -866,13 +555,16 @@
     return { filename, url: blobUrl, blob };
   };
 
-  // --- Client-Side High-Res A4 Landscape PDF Generation ---
+  // --- Client-Side High-Res A4 Landscape PDF Generation (100% Online) ---
   const generatePdfClient = async (data, autoDownload = false) => {
     if (!window.html2canvas || !window.jspdf) {
       throw new Error('PDF generator library is loading. Please wait a moment and try again.');
     }
 
     const sheet = document.getElementById('invoiceSheet');
+    if (!sheet) throw new Error('Invoice sheet element not found');
+
+    // Clone element off-screen for crisp fixed-size rendering
     let clone = null;
     try {
       clone = sheet.cloneNode(true);
@@ -890,6 +582,7 @@
       clone.style.zIndex = '-9999';
       document.body.appendChild(clone);
 
+      // Wait for all images in clone (logo, stamp, signature)
       const imgs = Array.from(clone.querySelectorAll('img'));
       await Promise.all(
         imgs.map((img) => {
@@ -938,14 +631,14 @@
       pdf.addImage(canvas.toDataURL('image/jpeg', 0.98), 'JPEG', x, y, renderW, renderH, undefined, 'FAST');
       const pdfFilename = `Invoice-${data.invoiceNumber || 'invoice'}.pdf`;
 
-      const blob = pdf.output('blob');
-      const pdfUrl = URL.createObjectURL(blob);
+      const pdfBlob = pdf.output('blob');
+      const pdfBlobUrl = URL.createObjectURL(pdfBlob);
 
       if (autoDownload) {
-        downloadFile(pdfUrl, pdfFilename);
+        downloadFile(pdfBlobUrl, pdfFilename);
       }
 
-      return { pdfFilename, pdfUrl, blob };
+      return { filename: pdfFilename, url: pdfBlobUrl, blob: pdfBlob };
     } finally {
       if (clone && clone.parentNode) {
         clone.parentNode.removeChild(clone);
@@ -953,217 +646,93 @@
     }
   };
 
-  // --- Execute Invoice Generation / Update ---
-  const executeGeneration = async () => {
-    closeConfirmModal();
-    hideStatus();
-
-    const data = serializeInvoiceData();
-    const isEdit = state.mode === 'edit';
-    const invNum = data.invoiceNumber;
-
-    if (printButton) {
-      printButton.disabled = true;
-      printButton.textContent = isEdit ? 'Updating Invoice...' : 'Generating Invoice...';
-    }
-    showStatus('info', isEdit ? `Updating Invoice #${invNum}...` : `Generating Invoice #${invNum} (Word & PDF)...`);
-
+  // --- Local History Management ---
+  const loadSavedInvoices = () => {
     try {
-      let result = null;
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) return JSON.parse(raw);
 
-      // 1. Try server API
-      try {
-        const endpoint = isEdit ? `/api/invoices/${encodeURIComponent(invNum)}` : '/api/invoices';
-        const method = isEdit ? 'PUT' : 'POST';
-
-        const response = await fetch(endpoint, {
-          method,
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data),
+      // Migrate from v2 if available
+      const oldV2 = localStorage.getItem('transbill_invoices_data_v2');
+      if (oldV2) {
+        const parsed = JSON.parse(oldV2);
+        return parsed.map((item) => {
+          const lr0 = item.lrs && item.lrs[0] ? item.lrs[0] : {};
+          return {
+            ...item,
+            lrNumber: lr0.lrNumber || item.lrNumber || '11403',
+            lrDate: lr0.lrDate || item.lrDate || item.invoiceDate,
+            loadingLocation: lr0.loadingLocation || item.loadingLocation || 'Medchal',
+            unloadingLocation: lr0.unloadingLocation || item.unloadingLocation || 'Kalakal',
+            vehicleNumber: lr0.vehicleNumber || item.vehicleNumber || 'AP 28 X 7948',
+            goodsDescription: lr0.goodsDescription || item.goodsDescription || 'Seeds',
+            packages: lr0.packages || item.packages || '273',
+            weight: lr0.weight || item.weight || '10.000',
+            rate: lr0.rate || item.rate || '700',
+            otherCharges: lr0.otherCharges || item.otherCharges || '0',
+          };
         });
-
-        if (response.ok) {
-          const resJson = await response.json();
-          if (resJson.ok) {
-            result = resJson;
-            // Auto download PDF from server
-            if (result.pdfUrl) {
-              downloadFile(result.pdfUrl, result.pdfFilename);
-            } else if (result.url) {
-              downloadFile(result.url, result.filename);
-            }
-          } else if (resJson.error && resJson.error.includes('already exists')) {
-            throw new Error(resJson.error);
-          }
-        }
-      } catch (srvErr) {
-        if (srvErr.message && srvErr.message.includes('already exists')) {
-          throw srvErr;
-        }
-        // Fall back to client browser generation for GitHub Pages static host
       }
+    } catch (e) {}
+    return [];
+  };
 
-      // 2. Client-side fallback if server not available
-      if (!result) {
-        // Prevent accidental duplicates in local storage for new mode
-        if (!isEdit && isInvoiceNumberExists(invNum)) {
-          throw new Error(`Invoice #${invNum} already exists in records. Please click "New Invoice" to assign the next number.`);
-        }
-
-        const docxRes = await generateDocxClient(data, false);
-        const pdfRes = await generatePdfClient(data, true); // Automatically download PDF
-        result = {
-          invoiceNumber: data.invoiceNumber,
-          filename: docxRes.filename,
-          url: docxRes.url,
-          pdfFilename: pdfRes.pdfFilename,
-          pdfUrl: pdfRes.pdfUrl,
-          message: `Invoice #${invNum} ${isEdit ? 'updated' : 'generated'} successfully.`,
-        };
-      }
-
-      // Save to localStorage database
-      saveToLocalInvoices(data, result);
-
-      state.lastGeneratedResult = result;
-      showStatus(
-        'success',
-        result.message || `Invoice #${invNum} generated successfully.`,
-        result.url,
-        result.filename,
-        result.pdfUrl,
-        result.pdfFilename
-      );
-
-      if (draftBadge) {
-        draftBadge.textContent = isEdit ? `Updated: #${invNum}` : `Generated: #${invNum}`;
-        draftBadge.className = 'draft-badge';
-      }
-
-      // Refresh invoice history list
-      await loadInvoiceHistory();
-
-      // If we were in edit mode, finish edit mode
-      if (isEdit) {
-        exitEditMode(false);
+  const saveToLocalInvoices = (invoiceData) => {
+    try {
+      const list = loadSavedInvoices();
+      const existingIdx = list.findIndex((i) => String(i.invoiceNumber) === String(invoiceData.invoiceNumber));
+      if (existingIdx >= 0) {
+        list[existingIdx] = invoiceData;
       } else {
-        // Prepare next invoice number for the user's next trip!
-        fetchNextInvoiceNumber();
+        list.unshift(invoiceData);
       }
-    } catch (error) {
-      showStatus('error', error.message || 'Invoice processing failed. Please try again.');
-    } finally {
-      if (printButton) {
-        printButton.disabled = false;
-        printButton.textContent = state.mode === 'edit' ? `Resubmit & Update Invoice #${state.editingInvoiceNumber}` : 'Generate Invoice (Word & PDF)';
-      }
-    }
-  };
-
-  if (executeConfirmBtn) executeConfirmBtn.addEventListener('click', executeGeneration);
-  if (form) {
-    form.addEventListener('submit', (e) => {
-      e.preventDefault();
-      openConfirmModal();
-    });
-  }
-
-  // --- LocalStorage Database Management ---
-  const getLocalInvoices = () => {
-    try {
-      return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+      state.invoices = list;
     } catch (e) {
-      return [];
+      console.warn('Could not save to localStorage:', e);
     }
   };
 
-  const isInvoiceNumberExists = (num) => {
-    const list = getLocalInvoices();
-    return list.some((inv) => String(inv.invoiceNumber).trim() === String(num).trim());
-  };
-
-  const saveToLocalInvoices = (invoiceData, resultMeta) => {
-    const list = getLocalInvoices();
-    const idx = list.findIndex((inv) => String(inv.invoiceNumber).trim() === String(invoiceData.invoiceNumber).trim());
-
-    const record = {
-      ...invoiceData,
-      status: 'Generated',
-      hasDocx: true,
-      hasPdf: true,
-      filename: resultMeta?.filename || `Invoice-${invoiceData.invoiceNumber}.docx`,
-      pdfFilename: resultMeta?.pdfFilename || `Invoice-${invoiceData.invoiceNumber}.pdf`,
-      docxUrl: resultMeta?.url || null,
-      pdfUrl: resultMeta?.pdfUrl || null,
-      updatedAt: new Date().toISOString(),
-    };
-
-    if (idx !== -1) {
-      list[idx] = record;
-    } else {
-      list.push(record);
-    }
-
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
-  };
-
-  // --- History Table Rendering & Actions ---
-  const loadInvoiceHistory = async () => {
-    let serverInvoices = [];
+  const deleteFromLocalInvoices = (invNum) => {
     try {
-      const resp = await fetch('/api/invoices');
-      if (resp.ok) {
-        const resJson = await resp.json();
-        if (resJson.ok && Array.isArray(resJson.invoices)) {
-          serverInvoices = resJson.invoices;
-        }
-      }
-    } catch (e) {
-      // Server offline / static host
-    }
-
-    const localList = getLocalInvoices();
-
-    // Merge: server invoices + local invoices
-    const map = new Map();
-    localList.forEach((inv) => map.set(String(inv.invoiceNumber), inv));
-    serverInvoices.forEach((inv) => {
-      const existing = map.get(String(inv.invoiceNumber));
-      map.set(String(inv.invoiceNumber), { ...(existing || {}), ...inv });
-    });
-
-    const combined = Array.from(map.values()).sort((a, b) => {
-      const numA = parseInt(String(a.invoiceNumber).replace(/\D/g, '') || '0', 10);
-      const numB = parseInt(String(b.invoiceNumber).replace(/\D/g, '') || '0', 10);
-      return numB - numA;
-    });
-
-    state.invoices = combined;
-    renderHistoryTable(combined);
+      let list = loadSavedInvoices();
+      list = list.filter((i) => String(i.invoiceNumber) !== String(invNum));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+      state.invoices = list;
+    } catch (e) {}
   };
 
-  const renderHistoryTable = (invoicesToRender) => {
+  const calculateNextInvoiceNumber = () => {
+    const list = loadSavedInvoices();
+    let maxNum = BASELINE_INVOICE_NUM;
+    list.forEach((i) => {
+      const n = parseInt(i.invoiceNumber, 10);
+      if (!isNaN(n) && n > maxNum) maxNum = n;
+    });
+    return String(maxNum + 1);
+  };
+
+  const renderHistoryTable = (filterText = '') => {
     if (!historyTableBody) return;
-    const query = (historySearchInput?.value || '').toLowerCase().trim();
+    const list = state.invoices;
+    const filter = (filterText || '').toLowerCase().trim();
 
-    const filtered = invoicesToRender.filter((inv) => {
-      if (!query) return true;
-      const num = String(inv.invoiceNumber || '').toLowerCase();
-      const cust = String(inv.customerName || '').toLowerCase();
-      const date = String(inv.invoiceDate || '').toLowerCase();
-      const lrsStr = JSON.stringify(inv.lrs || []).toLowerCase();
-      return num.includes(query) || cust.includes(query) || date.includes(query) || lrsStr.includes(query);
-    });
+    const filtered = filter
+      ? list.filter(
+          (i) =>
+            String(i.invoiceNumber).includes(filter) ||
+            (i.customerName || '').toLowerCase().includes(filter) ||
+            (i.lrNumber || '').toLowerCase().includes(filter)
+        )
+      : list;
 
-    if (historyCountBadge) {
-      historyCountBadge.textContent = `${filtered.length} records`;
-    }
+    setText(historyCountBadge, `${filtered.length} record${filtered.length === 1 ? '' : 's'}`);
 
-    if (!filtered.length) {
+    if (filtered.length === 0) {
       historyTableBody.innerHTML = `
         <tr>
-          <td colspan="7" class="empty-state" style="text-align:center;padding:24px;">
-            ${query ? 'No matching invoices found.' : 'No invoices saved yet. Generate one above to see it here.'}
+          <td colspan="6" class="empty-state">
+            ${filter ? 'No matching invoices found.' : 'No saved invoices yet. Generated invoices will appear here.'}
           </td>
         </tr>
       `;
@@ -1171,446 +740,242 @@
     }
 
     historyTableBody.innerHTML = filtered
-      .map((inv) => {
-        const lrCount = inv.lrs && Array.isArray(inv.lrs) ? inv.lrs.length : inv.lrCount || 1;
-        const totalDisp = inv.grandTotal ? `₹ ${inv.grandTotal}` : '-';
-        const isGen = inv.status === 'Generated' || inv.hasDocx || inv.hasPdf;
-        const statusClass = isGen ? 'generated' : 'saved';
-        const statusText = isGen ? 'Generated' : 'Saved Draft';
-
-        return `
-          <tr>
-            <td><strong>#${inv.invoiceNumber}</strong></td>
-            <td>${formatDate(inv.invoiceDate)}</td>
-            <td>${inv.customerName || '-'}</td>
-            <td><span style="font-weight:700;color:var(--green);">${lrCount} LR(s)</span></td>
-            <td><strong>${totalDisp}</strong></td>
-            <td><span class="status-pill ${statusClass}">${statusText}</span></td>
-            <td>
-              <div class="actions-col">
-                <button type="button" class="action-btn view" data-action="view" data-num="${inv.invoiceNumber}">👁️ View</button>
-                <button type="button" class="action-btn edit" data-action="edit" data-num="${inv.invoiceNumber}">✏️ Edit</button>
-                <button type="button" class="action-btn word" data-action="word" data-num="${inv.invoiceNumber}">📄 Word</button>
-                <button type="button" class="action-btn pdf" data-action="pdf" data-num="${inv.invoiceNumber}">📑 PDF</button>
-              </div>
-            </td>
-          </tr>
-        `;
-      })
+      .map(
+        (inv) => `
+      <tr data-inv="${escapeXml(inv.invoiceNumber)}">
+        <td><strong>#${escapeXml(inv.invoiceNumber)}</strong></td>
+        <td>${escapeXml(formatDate(inv.invoiceDate))}</td>
+        <td title="${escapeXml(inv.customerName || '')}">${escapeXml((inv.customerName || '').slice(0, 28))}${inv.customerName && inv.customerName.length > 28 ? '...' : ''}</td>
+        <td><span class="lr-pill">${escapeXml(inv.lrNumber || '-')}</span></td>
+        <td><strong>₹ ${formatCurrency(inv.grandTotal)}</strong></td>
+        <td class="actions-col">
+          <button type="button" class="action-btn edit" title="Load and edit this invoice" data-action="edit" data-inv="${escapeXml(inv.invoiceNumber)}">✏️ Edit</button>
+          <button type="button" class="action-btn word" title="Download Word (.docx)" data-action="word" data-inv="${escapeXml(inv.invoiceNumber)}">📄 Word</button>
+          <button type="button" class="action-btn pdf" title="Download PDF" data-action="pdf" data-inv="${escapeXml(inv.invoiceNumber)}">📑 PDF</button>
+          <button type="button" class="action-btn delete" title="Delete record" data-action="delete" data-inv="${escapeXml(inv.invoiceNumber)}">🗑️</button>
+        </td>
+      </tr>
+    `
+      )
       .join('');
-
-    // Attach row action listeners
-    historyTableBody.querySelectorAll('[data-action]').forEach((btn) => {
-      btn.addEventListener('click', (e) => {
-        const action = btn.dataset.action;
-        const num = btn.dataset.num;
-        handleHistoryAction(action, num);
-      });
-    });
   };
 
-  if (historySearchInput) {
-    historySearchInput.addEventListener('input', () => {
-      renderHistoryTable(state.invoices);
-    });
-  }
-  if (refreshHistoryBtn) {
-    refreshHistoryBtn.addEventListener('click', loadInvoiceHistory);
-  }
-
-  // --- View, Edit, Word, PDF Actions ---
-  const fetchInvoiceDetails = async (invoiceNumber) => {
-    // 1. Try local list
-    const local = state.invoices.find((i) => String(i.invoiceNumber) === String(invoiceNumber));
-    if (local && local.lrs && local.customerName) {
-      return local;
-    }
-
-    // 2. Try server API
-    try {
-      const resp = await fetch(`/api/invoices/${encodeURIComponent(invoiceNumber)}`);
-      if (resp.ok) {
-        return await resp.json();
-      }
-    } catch (e) {}
-
-    return local || null;
-  };
-
-  const handleHistoryAction = async (action, invoiceNumber) => {
-    const inv = await fetchInvoiceDetails(invoiceNumber);
-    if (!inv) {
-      alert(`Invoice #${invoiceNumber} details could not be found.`);
-      return;
-    }
-
-    if (action === 'view') {
-      openViewModal(inv);
-    } else if (action === 'edit') {
-      enterEditMode(inv);
-    } else if (action === 'word') {
-      downloadWordForInvoice(inv);
-    } else if (action === 'pdf') {
-      downloadPdfForInvoice(inv);
-    }
-  };
-
-  // --- Read-Only View Modal ---
-  const openViewModal = (inv) => {
-    state.viewingInvoice = inv;
-    viewModalTitle.textContent = `Invoice #${inv.invoiceNumber} Summary`;
-    viewModalBadge.textContent = inv.status || 'Generated';
-    viewModalBadge.className = `status-pill ${inv.status === 'Generated' ? 'generated' : 'saved'}`;
-
-    const lrs = inv.lrs || [
-      {
-        lrNumber: inv.lrNumber || '-',
-        lrDate: inv.lrDate || inv.invoiceDate,
-        vehicleNumber: inv.vehicleNumber || '-',
-        loadingLocation: inv.loadingLocation || '-',
-        unloadingLocation: inv.unloadingLocation || '-',
-        goodsDescription: inv.goodsDescription || '-',
-        packages: inv.packages || '-',
-        weight: inv.weight || '-',
-        rate: inv.rate || '-',
-        freight: inv.freight || '-',
-        otherCharges: inv.otherCharges || '0',
-        total: inv.total || inv.grandTotal || '-',
-      },
-    ];
-
-    let lrsHtml = `
-      <table class="modal-lr-table">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>LR No &amp; Date</th>
-            <th>Loading / Unloading</th>
-            <th>Vehicle No</th>
-            <th>Weight</th>
-            <th>Rate</th>
-            <th>Freight</th>
-            <th>Total</th>
-          </tr>
-        </thead>
-        <tbody>
-    `;
-
-    lrs.forEach((lr, i) => {
-      lrsHtml += `
-        <tr>
-          <td>${i + 1}</td>
-          <td><b>${lr.lrNumber}</b><br><small>${formatDate(lr.lrDate)}</small></td>
-          <td>${lr.loadingLocation || '-'} &rarr; ${lr.unloadingLocation || '-'}</td>
-          <td>${lr.vehicleNumber || '-'}</td>
-          <td>${lr.weight} MT</td>
-          <td>₹${lr.rate}</td>
-          <td>₹${lr.freight || '-'}</td>
-          <td><b>₹${lr.total || lr.freight || '-'}</b></td>
-        </tr>
-      `;
-    });
-    lrsHtml += `</tbody></table>`;
-
-    viewModalBody.innerHTML = `
-      <div class="confirm-summary-grid">
-        <div><span>Invoice Number</span><strong>#${inv.invoiceNumber}</strong></div>
-        <div><span>Invoice Date</span><strong>${formatDate(inv.invoiceDate)}</strong></div>
-        <div style="grid-column:span 2"><span>Billed Customer</span><strong>${inv.customerName}</strong></div>
-        <div><span>Customer GSTIN</span><strong>${inv.customerGstin || '-'}</strong></div>
-        <div><span>State / State Code</span><strong>${inv.customerState || '-'} (${inv.customerStateCode || '-'})</strong></div>
-        <div style="grid-column:span 2"><span>Billing Address</span><p style="margin:2px 0;font-size:12px;">${(inv.customerAddress || '-').replace(/\n/g, '<br>')}</p></div>
-      </div>
-      <div><strong>LR Details (${lrs.length} item(s)):</strong></div>
-      ${lrsHtml}
-      <div class="modal-grand-total-box">
-        <span>Grand Total Amount</span>
-        <strong>₹ ${inv.grandTotal || '-'}</strong>
-        <small>${inv.amountInWords || ''}</small>
-      </div>
-    `;
-
-    viewModal.style.display = 'flex';
-  };
-
-  const closeViewModal = () => {
-    viewModal.style.display = 'none';
-    state.viewingInvoice = null;
-  };
-
-  if (viewModalCloseBtn) viewModalCloseBtn.addEventListener('click', closeViewModal);
-  if (closeViewModalBtn) closeViewModalBtn.addEventListener('click', closeViewModal);
-
-  if (viewModalEditBtn) {
-    viewModalEditBtn.addEventListener('click', () => {
-      if (state.viewingInvoice) {
-        const inv = state.viewingInvoice;
-        closeViewModal();
-        enterEditMode(inv);
-      }
-    });
-  }
-
-  if (viewModalWordBtn) {
-    viewModalWordBtn.addEventListener('click', () => {
-      if (state.viewingInvoice) downloadWordForInvoice(state.viewingInvoice);
-    });
-  }
-
-  if (viewModalPdfBtn) {
-    viewModalPdfBtn.addEventListener('click', () => {
-      if (state.viewingInvoice) downloadPdfForInvoice(state.viewingInvoice);
-    });
-  }
-
-  // --- Edit Mode Implementation ---
-  const enterEditMode = (inv) => {
+  // --- Load Invoice into Form for Editing ---
+  const loadInvoiceIntoForm = (inv) => {
     state.mode = 'edit';
     state.editingInvoiceNumber = String(inv.invoiceNumber);
 
-    // Update UI headers & badges
-    if (headerModeBadge) {
-      headerModeBadge.textContent = `Mode: Editing Invoice #${inv.invoiceNumber}`;
-      headerModeBadge.className = 'mode-badge edit-mode';
-    }
-    if (editorHeading) {
-      editorHeading.textContent = `Edit & Resubmit Invoice #${inv.invoiceNumber}`;
-    }
-    if (draftBadge) {
-      draftBadge.textContent = `Editing #${inv.invoiceNumber}`;
-      draftBadge.className = 'draft-badge editing';
-    }
-    if (cancelEditBtnTop) cancelEditBtnTop.style.display = 'inline-block';
-    if (cancelEditBtnBottom) cancelEditBtnBottom.style.display = 'inline-block';
+    setText(draftStatus, `Editing #${inv.invoiceNumber}`);
+    if (draftStatus) draftStatus.className = 'draft-badge editing';
+    setText(headerModeBadge, `Mode: Editing #${inv.invoiceNumber}`);
+    setText(editorHeading, `Edit Invoice #${inv.invoiceNumber}`);
+    if (cancelEditBtn) cancelEditBtn.style.display = 'inline-block';
 
-    if (printButton) {
-      printButton.textContent = `Resubmit & Update Invoice #${inv.invoiceNumber}`;
-    }
+    setVal(invoiceNumberInput, inv.invoiceNumber);
+    setVal(invoiceDateInput, parseDateToIso(inv.invoiceDate));
 
-    // Populate top fields
-    setVal('invoiceNumber', inv.invoiceNumber);
-    invoiceNumberInput.readOnly = true;
-    if (toggleLockInvoiceBtn) {
-      toggleLockInvoiceBtn.textContent = '🔒 Locked';
-      toggleLockInvoiceBtn.title = 'Invoice number cannot be modified during edit.';
-    }
+    setVal(customerNameInput, inv.customerName);
+    setVal(customerGstinInput, inv.customerGstin);
+    setVal(customerAddressInput, inv.customerAddress);
+    setVal(customerStateInput, inv.customerState);
+    setVal(customerStateCodeInput, inv.customerStateCode);
 
-    setVal('invoiceDate', inv.invoiceDate || new Date().toISOString().slice(0, 10));
-    setVal('customerName', inv.customerName || '');
-    setVal('customerGstin', inv.customerGstin || '');
-    setVal('customerAddress', inv.customerAddress || '');
-    setVal('customerState', inv.customerState || '');
-    setVal('customerStateCode', inv.customerStateCode || '');
+    setVal(consignorInput, inv.consignor);
+    setVal(consigneeInput, inv.consignee);
+    setVal(consignorAddressInput, inv.consignorAddress);
+    setVal(consigneeAddressInput, inv.consigneeAddress);
+    setVal(consignorGstinInput, inv.consignorGstin);
+    setVal(consignorStateCodeInput, inv.consignorStateCode);
 
-    setVal('consignor', inv.consignor || '');
-    setVal('consignorAddress', inv.consignorAddress || '');
-    setVal('consignorGstin', inv.consignorGstin || '');
-    setVal('consignorStateCode', inv.consignorStateCode || '');
+    setVal(lrNumberInput, inv.lrNumber);
+    setVal(lrDateInput, parseDateToIso(inv.lrDate || inv.invoiceDate));
+    setVal(loadingLocationInput, inv.loadingLocation);
+    setVal(unloadingLocationInput, inv.unloadingLocation);
+    setVal(vehicleNumberInput, inv.vehicleNumber);
+    setVal(goodsDescriptionInput, inv.goodsDescription);
+    setVal(packagesInput, inv.packages);
+    setVal(weightInput, inv.weight);
 
-    setVal('consignee', inv.consignee || '');
-    setVal('consigneeAddress', inv.consigneeAddress || '');
-    setVal('consigneeStateCode', inv.consigneeStateCode || '');
+    setVal(rateInput, inv.rate);
+    setVal(otherChargesInput, inv.otherCharges || '0');
+    setVal(discountInput, inv.discount || '0');
+    setVal(taxModeInput, inv.taxMode || 'none');
+    setVal(taxRateInput, inv.taxRate || '0');
+    setVal(remarksInput, inv.remarks || 'NA');
 
-    setVal('overallOtherCharges', inv.otherCharges || '0');
-    setVal('discount', inv.discount || '0');
-    setVal('taxMode', inv.taxMode || 'none');
-    setVal('taxRate', inv.taxRate || '0');
-    setVal('remarks', inv.remarks || '');
-
-    // Populate LRs
-    if (inv.lrs && Array.isArray(inv.lrs) && inv.lrs.length > 0) {
-      state.lrs = JSON.parse(JSON.stringify(inv.lrs));
-    } else {
-      state.lrs = [
-        {
-          lrNumber: inv.lrNumber || '',
-          lrDate: inv.lrDate || inv.invoiceDate || '',
-          loadingLocation: inv.loadingLocation || '',
-          unloadingLocation: inv.unloadingLocation || '',
-          goodsDescription: inv.goodsDescription || '',
-          vehicleNumber: inv.vehicleNumber || '',
-          packages: inv.packages || '',
-          weight: inv.weight || '',
-          rate: inv.rate || '',
-          otherCharges: inv.otherCharges || '0',
-        },
-      ];
-    }
-
-    renderLrCards();
+    updatePreview();
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    showStatus('info', `Loaded Invoice #${inv.invoiceNumber} for editing. Make your changes and click Resubmit & Update.`);
+    showStatus('info', `Loaded Invoice #${inv.invoiceNumber} into editor. Edit fields and click "Generate Invoice" to update.`);
   };
 
-  const exitEditMode = (confirmWithUser = true) => {
-    if (confirmWithUser && !confirm('Are you sure you want to exit edit mode? Unsaved changes will be discarded.')) {
-      return;
-    }
-
+  const exitEditMode = () => {
     state.mode = 'new';
     state.editingInvoiceNumber = null;
 
-    if (headerModeBadge) {
-      headerModeBadge.textContent = 'Mode: New Invoice';
-      headerModeBadge.className = 'mode-badge';
-    }
-    if (editorHeading) {
-      editorHeading.textContent = 'Create a Freight Invoice';
-    }
-    if (draftBadge) {
-      draftBadge.textContent = 'New Draft';
-      draftBadge.className = 'draft-badge';
-    }
-    if (cancelEditBtnTop) cancelEditBtnTop.style.display = 'none';
-    if (cancelEditBtnBottom) cancelEditBtnBottom.style.display = 'none';
+    setText(draftStatus, 'New Draft');
+    if (draftStatus) draftStatus.className = 'draft-badge';
+    setText(headerModeBadge, 'Mode: New Invoice');
+    setText(editorHeading, 'Create a Freight Invoice');
+    if (cancelEditBtn) cancelEditBtn.style.display = 'none';
 
-    if (printButton) {
-      printButton.textContent = 'Generate Invoice (Word & PDF)';
-    }
-
-    invoiceNumberInput.readOnly = true;
-    if (toggleLockInvoiceBtn) {
-      toggleLockInvoiceBtn.textContent = '🔒 Auto';
-      toggleLockInvoiceBtn.title = 'Auto-assigned next number.';
-    }
-
-    fetchNextInvoiceNumber();
-    hideStatus();
+    setVal(invoiceNumberInput, calculateNextInvoiceNumber());
+    updatePreview();
   };
 
-  if (cancelEditBtnTop) cancelEditBtnTop.addEventListener('click', () => exitEditMode(true));
-  if (cancelEditBtnBottom) cancelEditBtnBottom.addEventListener('click', () => exitEditMode(true));
+  // --- Reset Form to Clean Defaults ---
+  const resetFormToDefault = () => {
+    form.reset();
+    state.mode = 'new';
+    state.editingInvoiceNumber = null;
 
-  // --- Direct Download Word / PDF Actions from History ---
-  const downloadWordForInvoice = async (inv) => {
-    showStatus('info', `Preparing Word file for Invoice #${inv.invoiceNumber}...`);
-    try {
-      if (inv.docxUrl) {
-        downloadFile(inv.docxUrl, inv.filename || `Invoice-${inv.invoiceNumber}.docx`);
-        showStatus('success', `Downloaded Word document for Invoice #${inv.invoiceNumber}.`);
-        return;
-      }
-      const res = await generateDocxClient(inv, true);
-      showStatus('success', `Downloaded Word document for Invoice #${inv.invoiceNumber}.`, res.url, res.filename);
-    } catch (e) {
-      showStatus('error', `Failed to download Word file: ${e.message}`);
-    }
+    setText(draftStatus, 'New Draft');
+    if (draftStatus) draftStatus.className = 'draft-badge';
+    setText(headerModeBadge, 'Mode: New Invoice');
+    setText(editorHeading, 'Create a Freight Invoice');
+    if (cancelEditBtn) cancelEditBtn.style.display = 'none';
+
+    const today = new Date().toISOString().slice(0, 10);
+    setVal(invoiceDateInput, today);
+    setVal(lrDateInput, today);
+    setVal(invoiceNumberInput, calculateNextInvoiceNumber());
+    setVal(taxModeInput, 'none');
+    setVal(remarksInput, 'NA');
+    setVal(otherChargesInput, '0');
+    setVal(discountInput, '0');
+    setVal(taxRateInput, '0');
+
+    updatePreview();
   };
 
-  const downloadPdfForInvoice = async (inv) => {
-    showStatus('info', `Preparing PDF for Invoice #${inv.invoiceNumber}...`);
-    try {
-      if (inv.pdfUrl) {
-        downloadFile(inv.pdfUrl, inv.pdfFilename || `Invoice-${inv.invoiceNumber}.pdf`);
-        showStatus('success', `Downloaded PDF for Invoice #${inv.invoiceNumber}.`);
-        return;
-      }
+  // --- Fill Sample Data ---
+  const fillSampleData = () => {
+    const today = new Date().toISOString().slice(0, 10);
+    const nextNum = val(invoiceNumberInput) || calculateNextInvoiceNumber();
 
-      // Populate preview sheet temporarily with this invoice's data, then capture PDF
-      const currentMode = state.mode;
-      const currentLrs = state.lrs;
+    setVal(invoiceNumberInput, nextNum);
+    setVal(invoiceDateInput, today);
 
-      // Temporarily set form fields
-      setVal('invoiceNumber', inv.invoiceNumber);
-      setVal('invoiceDate', inv.invoiceDate);
-      setVal('customerName', inv.customerName);
-      setVal('customerGstin', inv.customerGstin);
-      setVal('customerAddress', inv.customerAddress);
-      setVal('customerState', inv.customerState);
-      setVal('customerStateCode', inv.customerStateCode);
-      setVal('remarks', inv.remarks);
-      state.lrs = inv.lrs || [];
+    setVal(customerNameInput, 'GREEN AGREVOLUTION PRIVATE LTD');
+    setVal(customerGstinInput, '09AAECG6456H1ZC');
+    setVal(customerAddressInput, 'B-103/104, Gomti Nagar, Vibhuti Khand Gomti Nagar,\nLucknow - 226010\nUTTAR PRADESH');
+    setVal(customerStateInput, 'UTTAR PRADESH');
+    setVal(customerStateCodeInput, '09/UP');
 
-      updatePreview();
+    setVal(consignorInput, 'GREEN AGREVOLUTION PRIVATE LTD');
+    setVal(consigneeInput, 'GREEN AGREVOLUTION PVT LTD');
+    setVal(consignorAddressInput, 'C/O GREEN AGREVOLUTION PVT LTD, Medchal\nMedchal\nTELANGANA');
+    setVal(consigneeAddressInput, 'C/O Green Agrevolution Pvt Ltd, Medchal\nMedchal\nTELANGANA');
+    setVal(consignorGstinInput, '36AAECG6456H1ZF');
+    setVal(consignorStateCodeInput, '36/TS');
 
-      const res = await generatePdfClient(inv, true);
-      showStatus('success', `Downloaded PDF for Invoice #${inv.invoiceNumber}.`, null, null, res.pdfUrl, res.pdfFilename);
+    setVal(lrNumberInput, '11403');
+    setVal(lrDateInput, today);
+    setVal(loadingLocationInput, 'Medchal');
+    setVal(unloadingLocationInput, 'Kalakal');
+    setVal(vehicleNumberInput, 'AP 28 X 7948');
+    setVal(goodsDescriptionInput, 'Seeds');
+    setVal(packagesInput, '273');
+    setVal(weightInput, '10.000');
 
-      // Restore form
-      if (currentMode === 'edit') {
-        enterEditMode(inv);
-      } else {
-        updatePreview();
-      }
-    } catch (e) {
-      showStatus('error', `Failed to generate PDF: ${e.message}`);
-    }
+    setVal(rateInput, '700');
+    setVal(otherChargesInput, '0');
+    setVal(discountInput, '0');
+    setVal(taxModeInput, 'none');
+    setVal(taxRateInput, '0');
+    setVal(remarksInput, 'NA');
+
+    updatePreview();
+    showStatus('info', 'Loaded sample transport invoice for Green Agrevolution.');
   };
 
-  // --- Action Buttons on Form ---
-  if (downloadPdfButton) {
-    downloadPdfButton.addEventListener('click', async () => {
-      if (!validateForm()) return;
-      const data = serializeInvoiceData();
-      downloadPdfButton.disabled = true;
-      downloadPdfButton.textContent = 'Generating PDF...';
-      showStatus('info', `Generating PDF for Invoice #${data.invoiceNumber}...`);
+  // --- Event Listeners ---
 
-      try {
-        let pdfRes = null;
+  // Live input listening
+  form.addEventListener('input', updatePreview);
+  form.addEventListener('change', updatePreview);
+
+  // Quick Chips
+  if (chipGreenAgro) chipGreenAgro.addEventListener('click', fillSampleData);
+  if (chipClear) chipClear.addEventListener('click', resetFormToDefault);
+  if (fillSampleButton) fillSampleButton.addEventListener('click', fillSampleData);
+  if (clearFormButton) clearFormButton.addEventListener('click', resetFormToDefault);
+  if (resetButton) resetButton.addEventListener('click', resetFormToDefault);
+  if (cancelEditBtn) cancelEditBtn.addEventListener('click', exitEditMode);
+
+  // History search
+  if (historySearchInput) {
+    historySearchInput.addEventListener('input', (e) => {
+      renderHistoryTable(e.target.value);
+    });
+  }
+
+  // Refresh history
+  if (refreshHistoryBtn) {
+    refreshHistoryBtn.addEventListener('click', () => {
+      state.invoices = loadSavedInvoices();
+      renderHistoryTable(historySearchInput?.value || '');
+      showStatus('info', 'Invoice history refreshed.');
+    });
+  }
+
+  // History table row action delegations
+  if (historyTableBody) {
+    historyTableBody.addEventListener('click', async (e) => {
+      const btn = e.target.closest('.action-btn');
+      if (!btn) return;
+
+      const action = btn.dataset.action;
+      const invNum = btn.dataset.inv;
+      const inv = state.invoices.find((i) => String(i.invoiceNumber) === String(invNum));
+      if (!inv) return;
+
+      if (action === 'edit') {
+        loadInvoiceIntoForm(inv);
+      } else if (action === 'word') {
+        btn.disabled = true;
+        btn.textContent = '...';
         try {
-          const resp = await fetch('/api/invoices', {
-            method: state.mode === 'edit' ? 'PUT' : 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data),
-          });
-          if (resp.ok) {
-            const resJson = await resp.json();
-            if (resJson.ok && resJson.pdfUrl) {
-              downloadFile(resJson.pdfUrl, resJson.pdfFilename);
-              showStatus('success', 'PDF downloaded successfully.', resJson.url, resJson.filename, resJson.pdfUrl, resJson.pdfFilename);
-              return;
-            }
-          }
-        } catch (e) {}
-
-        pdfRes = await generatePdfClient(data, true);
-        showStatus('success', 'PDF downloaded successfully.', null, null, pdfRes.pdfUrl, pdfRes.pdfFilename);
-      } catch (err) {
-        showStatus('error', 'PDF download error: ' + err.message);
-      } finally {
-        downloadPdfButton.disabled = false;
-        downloadPdfButton.textContent = 'Download PDF';
+          await generateDocxClient(inv, true);
+        } catch (err) {
+          alert('Could not download Word: ' + err.message);
+        } finally {
+          btn.disabled = false;
+          btn.textContent = '📄 Word';
+        }
+      } else if (action === 'pdf') {
+        btn.disabled = true;
+        btn.textContent = '...';
+        try {
+          loadInvoiceIntoForm(inv);
+          await new Promise((r) => setTimeout(r, 60));
+          await generatePdfClient(inv, true);
+        } catch (err) {
+          alert('Could not download PDF: ' + err.message);
+        } finally {
+          btn.disabled = false;
+          btn.textContent = '📑 PDF';
+        }
+      } else if (action === 'delete') {
+        if (confirm(`Are you sure you want to delete Invoice #${invNum}?`)) {
+          deleteFromLocalInvoices(invNum);
+          renderHistoryTable(historySearchInput?.value || '');
+          showStatus('info', `Invoice #${invNum} deleted.`);
+        }
       }
     });
   }
 
-  if (downloadDocxButton) {
-    downloadDocxButton.addEventListener('click', async () => {
-      if (!validateForm()) return;
+  // Save Draft Button
+  if (saveButton) {
+    saveButton.addEventListener('click', () => {
       const data = serializeInvoiceData();
-      downloadDocxButton.disabled = true;
-      downloadDocxButton.textContent = 'Generating Word...';
-      showStatus('info', `Generating Word file for Invoice #${data.invoiceNumber}...`);
-
-      try {
-        try {
-          const resp = await fetch('/api/invoices', {
-            method: state.mode === 'edit' ? 'PUT' : 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data),
-          });
-          if (resp.ok) {
-            const resJson = await resp.json();
-            if (resJson.ok && resJson.url) {
-              downloadFile(resJson.url, resJson.filename);
-              showStatus('success', 'Word invoice downloaded successfully.', resJson.url, resJson.filename, resJson.pdfUrl, resJson.pdfFilename);
-              return;
-            }
-          }
-        } catch (e) {}
-
-        const docxRes = await generateDocxClient(data, true);
-        showStatus('success', 'Word invoice downloaded successfully.', docxRes.url, docxRes.filename);
-      } catch (err) {
-        showStatus('error', 'Word download error: ' + err.message);
-      } finally {
-        downloadDocxButton.disabled = false;
-        downloadDocxButton.textContent = 'Download Word (.docx)';
-      }
+      saveToLocalInvoices(data);
+      renderHistoryTable(historySearchInput?.value || '');
+      showStatus('info', `Draft saved locally for Invoice #${data.invoiceNumber}.`);
     });
   }
 
+  // Print Dialog Button
   if (printPdfButton) {
     printPdfButton.addEventListener('click', () => {
       if (!validateForm()) return;
@@ -1619,125 +984,113 @@
     });
   }
 
-  if (saveButton) {
-    saveButton.addEventListener('click', () => {
+  // Download Word Only Button
+  if (downloadDocxButton) {
+    downloadDocxButton.addEventListener('click', async () => {
+      if (!validateForm()) return;
       const data = serializeInvoiceData();
-      saveToLocalInvoices(data, null);
-      loadInvoiceHistory();
-      showStatus('info', `Draft saved locally for Invoice #${data.invoiceNumber}.`);
+      downloadDocxButton.disabled = true;
+      downloadDocxButton.textContent = 'Generating Word...';
+      showStatus('info', `Generating Word document for Invoice #${data.invoiceNumber}...`);
+
+      try {
+        const docxRes = await generateDocxClient(data, true);
+        saveToLocalInvoices(data);
+        renderHistoryTable(historySearchInput?.value || '');
+        showStatus('success', `Word invoice downloaded successfully for #${data.invoiceNumber}.`, docxRes.url, docxRes.filename);
+      } catch (err) {
+        showStatus('error', 'Word generation error: ' + err.message);
+      } finally {
+        downloadDocxButton.disabled = false;
+        downloadDocxButton.textContent = 'Download Word (.docx)';
+      }
     });
   }
 
-  // --- Reset / Clear / Sample Handlers ---
-  const resetFormToBlank = () => {
-    if (state.mode === 'edit') {
-      exitEditMode(false);
+  // Download PDF Only Button
+  if (downloadPdfButton) {
+    downloadPdfButton.addEventListener('click', async () => {
+      if (!validateForm()) return;
+      const data = serializeInvoiceData();
+      downloadPdfButton.disabled = true;
+      downloadPdfButton.textContent = 'Generating PDF...';
+      showStatus('info', `Generating high-res PDF for Invoice #${data.invoiceNumber}...`);
+
+      try {
+        const pdfRes = await generatePdfClient(data, true);
+        saveToLocalInvoices(data);
+        renderHistoryTable(historySearchInput?.value || '');
+        showStatus('success', `PDF invoice downloaded successfully for #${data.invoiceNumber}.`, null, null, pdfRes.url, pdfRes.filename);
+      } catch (err) {
+        showStatus('error', 'PDF generation error: ' + err.message);
+      } finally {
+        downloadPdfButton.disabled = false;
+        downloadPdfButton.textContent = 'Download PDF';
+      }
+    });
+  }
+
+  // Primary Submit Action: Generate Invoice (Both Word & PDF)
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!validateForm()) return;
+
+    const data = serializeInvoiceData();
+    printButton.disabled = true;
+    printButton.textContent = 'Generating Word & PDF...';
+    showStatus('info', `Generating both Word and PDF invoices for #${data.invoiceNumber}...`);
+
+    try {
+      // 1. Generate and download Word (.docx)
+      const docxRes = await generateDocxClient(data, true);
+
+      // Brief delay so browser handles downloads cleanly
+      await new Promise((resolve) => setTimeout(resolve, 350));
+
+      // 2. Generate and download PDF
+      const pdfRes = await generatePdfClient(data, true);
+
+      // 3. Save to localStorage database
+      saveToLocalInvoices(data);
+      renderHistoryTable(historySearchInput?.value || '');
+
+      showStatus(
+        'success',
+        `Invoice #${data.invoiceNumber} generated! Both Word (.docx) and PDF downloaded.`,
+        docxRes.url,
+        docxRes.filename,
+        pdfRes.url,
+        pdfRes.filename
+      );
+    } catch (err) {
+      showStatus('error', 'Invoice generation error: ' + err.message);
+    } finally {
+      printButton.disabled = false;
+      printButton.textContent = 'Generate Invoice (Word & PDF)';
     }
-    form.reset();
-    const today = new Date().toISOString().slice(0, 10);
-    setVal('invoiceDate', today);
-    setVal('taxMode', 'none');
-    state.lrs = [
-      {
-        lrNumber: '',
-        lrDate: today,
-        loadingLocation: 'Medchal',
-        unloadingLocation: 'Kalakal',
-        goodsDescription: 'Seeds',
-        vehicleNumber: '',
-        packages: '',
-        weight: '',
-        rate: '700',
-        otherCharges: '0',
-      },
-    ];
-    renderLrCards();
-    fetchNextInvoiceNumber();
-    hideStatus();
-  };
-
-  const fillSampleData = () => {
-    if (state.mode === 'edit') {
-      exitEditMode(false);
-    }
-    const today = new Date().toISOString().slice(0, 10);
-    setVal('invoiceDate', today);
-    setVal('customerName', 'GREEN AGREVOLUTION PRIVATE LTD');
-    setVal('customerGstin', '09AAECG6456H1ZC');
-    setVal('customerAddress', 'B-103/104, Gomti Nagar, Vibhuti Khand Gomti Nagar,\nLucknow - 226010 UTTAR PRADESH');
-    setVal('customerState', 'UTTAR PRADESH');
-    setVal('customerStateCode', '09/UP');
-
-    setVal('consignor', 'GREEN AGREVOLUTION PRIVATE LTD');
-    setVal('consignorAddress', 'C/O GREEN AGREVOLUTION PVT LTD, Medchal');
-    setVal('consignorGstin', '36AAECG6456H1ZF');
-    setVal('consignorStateCode', '36/TS');
-
-    setVal('consignee', 'GREEN AGREVOLUTION PVT LTD');
-    setVal('consigneeAddress', 'C/O Green Agrevolution Pvt Ltd, Medchal');
-    setVal('consigneeStateCode', '36/TS');
-
-    setVal('overallOtherCharges', '0');
-    setVal('discount', '0');
-    setVal('taxMode', 'none');
-    setVal('taxRate', '0');
-    setVal('remarks', 'NA');
-
-    // 2 Sample LRs to demonstrate multi-LR capability
-    state.lrs = [
-      {
-        lrNumber: '11406',
-        lrDate: today,
-        loadingLocation: 'Medchal',
-        unloadingLocation: 'Kalakal',
-        goodsDescription: 'Seeds',
-        vehicleNumber: 'AP 28 X 7948',
-        packages: '273',
-        weight: '10.000',
-        rate: '700',
-        otherCharges: '0',
-      },
-      {
-        lrNumber: '11407',
-        lrDate: today,
-        loadingLocation: 'Medchal',
-        unloadingLocation: 'Kalakal',
-        goodsDescription: 'Seeds',
-        vehicleNumber: 'TS 08 UB 4512',
-        packages: '320',
-        weight: '12.500',
-        rate: '700',
-        otherCharges: '0',
-      },
-    ];
-
-    renderLrCards();
-    fetchNextInvoiceNumber();
-    showStatus('info', 'Sample data loaded with 2 LR numbers. Adjust details as required.');
-  };
-
-  if (resetButton) resetButton.addEventListener('click', resetFormToBlank);
-  if (clearFormButton) clearFormButton.addEventListener('click', resetFormToBlank);
-  if (chipClear) chipClear.addEventListener('click', resetFormToBlank);
-  if (fillSampleButton) fillSampleButton.addEventListener('click', fillSampleData);
-  if (chipGreenAgro) chipGreenAgro.addEventListener('click', fillSampleData);
-
-  // Top fields change listeners
-  const topInputs = form.querySelectorAll('input:not([data-field]), textarea, select');
-  topInputs.forEach((el) => {
-    el.addEventListener('input', updatePreview);
-    el.addEventListener('change', updatePreview);
   });
 
-  // --- Initial Startup ---
-  const init = async () => {
+  // --- Initial Page Load ---
+  const init = () => {
+    state.invoices = loadSavedInvoices();
+
+    // Default dates & invoice number
     const today = new Date().toISOString().slice(0, 10);
-    if (invoiceDateInput && !invoiceDateInput.value) {
-      invoiceDateInput.value = today;
-    }
-    renderLrCards();
-    await loadInvoiceHistory();
-    await fetchNextInvoiceNumber();
+    setVal(invoiceDateInput, today);
+    setVal(lrDateInput, today);
+
+    const nextInv = calculateNextInvoiceNumber();
+    setVal(invoiceNumberInput, nextInv);
+
+    // Initial fill from sample if first time
+    fillSampleData();
+
+    // Set invoice number to next number
+    setVal(invoiceNumberInput, nextInv);
+    updatePreview();
+
+    // Render saved invoices table
+    renderHistoryTable();
   };
 
   init();

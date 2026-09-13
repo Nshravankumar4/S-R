@@ -196,6 +196,12 @@ def create_invoice_docx(data, output_path):
         xml = xml.replace(k, escape_xml(v))
 
     files["word/document.xml"] = xml.encode("utf-8")
+    stamp_sign_file = ROOT / "stamp_with_sign.png"
+    if stamp_sign_file.exists():
+        stamp_bytes = stamp_sign_file.read_bytes()
+        files["word/media/image3.png"] = stamp_bytes
+        files["word/media/image4.png"] = stamp_bytes
+
     with zipfile.ZipFile(output_path, "w", zipfile.ZIP_DEFLATED) as z_out:
         for name, content in files.items():
             z_out.writestr(name, content)

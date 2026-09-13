@@ -32,7 +32,7 @@
         </div>
         <div class="heading-badges">
           <span class="draft-badge" id="draftStatus">New Draft</span>
-          <button type="button" class="cancel-edit-btn" id="cancelEditBtnTop" style="display:none;">Cancel Edit</button>
+          <button type="button" class="cancel-edit-btn" id="cancelEditBtn" style="display:none;">Cancel Edit</button>
         </div>
       </div>
 
@@ -43,16 +43,13 @@
       </div>
 
       <form id="invoiceForm" novalidate>
-        <!-- 1. Invoice Meta Details -->
+        <!-- 1. Invoice Details -->
         <fieldset>
           <legend>1. Invoice Details</legend>
           <div class="form-grid two">
             <label>
-              Invoice Number <span class="required-star">*</span> <small class="field-hint">(Auto-assigned)</small>
-              <div class="input-with-action">
-                <input id="invoiceNumber" name="invoiceNumber" inputmode="numeric" placeholder="e.g. 11049" readonly required>
-                <button type="button" class="field-action-btn" id="toggleLockInvoiceBtn" title="Auto-assigned next number. Click to edit manually if required.">🔒 Auto</button>
-              </div>
+              Invoice Number <span class="required-star">*</span>
+              <input id="invoiceNumber" name="invoiceNumber" inputmode="numeric" placeholder="e.g. 11048" required>
             </label>
             <label>
               Invoice Date <span class="required-star">*</span>
@@ -88,7 +85,7 @@
           </div>
         </fieldset>
 
-        <!-- 3. Consignor & Consignee Details -->
+        <!-- 3. Shipment & Consignor / Consignee -->
         <fieldset>
           <legend>3. Consignor &amp; Consignee Details</legend>
           <div class="form-grid two">
@@ -119,34 +116,56 @@
           </div>
         </fieldset>
 
-        <!-- 4. Dynamic Multiple LR Numbers -->
-        <fieldset class="lr-fieldset">
-          <legend>4. Lorry Receipts (LRs) &amp; Trip Details</legend>
-          <div class="lr-toolbar">
-            <div class="lr-count-stepper">
-              <span class="lr-count-label">How many LR Numbers?</span>
-              <div class="stepper-controls">
-                <button type="button" class="stepper-btn" id="decrementLrBtn" title="Remove last LR">-</button>
-                <input type="number" id="lrCountInput" min="1" max="10" value="1" readonly class="stepper-input">
-                <button type="button" class="stepper-btn" id="incrementLrBtn" title="Add another LR">+</button>
-              </div>
-            </div>
-            <button type="button" class="add-lr-btn" id="addLrQuickBtn">+ Add Another LR</button>
-          </div>
-
-          <!-- Dynamic LR Cards Container -->
-          <div id="lrCardsContainer" class="lr-cards-container">
-            <!-- Rendered dynamically by app.js -->
+        <!-- 4. Lorry Receipt & Trip Details (Classic Single-LR Style) -->
+        <fieldset>
+          <legend>4. Lorry Receipt &amp; Trip Details</legend>
+          <div class="form-grid two">
+            <label>
+              LR Number <span class="required-star">*</span>
+              <input id="lrNumber" name="lrNumber" placeholder="e.g. 11403" required>
+            </label>
+            <label>
+              LR Date <span class="required-star">*</span>
+              <input id="lrDate" name="lrDate" type="date" required>
+            </label>
+            <label>
+              Loading Location <span class="required-star">*</span>
+              <input id="loadingLocation" name="loadingLocation" placeholder="e.g. Medchal" required>
+            </label>
+            <label>
+              Unloading Location <span class="required-star">*</span>
+              <input id="unloadingLocation" name="unloadingLocation" placeholder="e.g. Kalakal" required>
+            </label>
+            <label>
+              Vehicle Number <span class="required-star">*</span>
+              <input id="vehicleNumber" name="vehicleNumber" placeholder="e.g. AP 28 X 7948" style="text-transform:uppercase" required>
+            </label>
+            <label>
+              Goods Description <span class="required-star">*</span>
+              <input id="goodsDescription" name="goodsDescription" placeholder="e.g. Seeds" required>
+            </label>
+            <label>
+              No. of Bags / Packages <span class="required-star">*</span>
+              <input id="packages" name="packages" type="number" min="0" inputmode="numeric" placeholder="273" required>
+            </label>
+            <label>
+              Weight (MT) <span class="required-star">*</span>
+              <input id="weight" name="weight" type="number" min="0" step="0.001" inputmode="decimal" placeholder="10.000" required>
+            </label>
           </div>
         </fieldset>
 
-        <!-- 5. Overall Charges & Tax -->
+        <!-- 5. Freight Charges & Taxes -->
         <fieldset>
-          <legend>5. Overall Charges &amp; Taxes</legend>
+          <legend>5. Freight Charges &amp; Taxes</legend>
           <div class="form-grid three">
             <label>
-              Additional Charges (INR)
-              <input id="overallOtherCharges" name="overallOtherCharges" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0">
+              Rate (INR per MT) <span class="required-star">*</span>
+              <input id="rate" name="rate" type="number" min="0" step="0.01" inputmode="decimal" placeholder="700" required>
+            </label>
+            <label>
+              Other / Loading Charges (INR)
+              <input id="otherCharges" name="otherCharges" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0">
             </label>
             <label>
               Discount (INR)
@@ -171,18 +190,15 @@
           </div>
 
           <div class="calculation-strip">
-            <span>Total LRs: <strong id="calcLrCount">1</strong></span>
-            <span>Total Weight: <strong id="calcTotalWeight">0.000 MT</strong></span>
-            <span>Freight: <strong id="calcFreight">INR 0.00</strong></span>
-            <span>Taxable: <strong id="calcTaxable">INR 0.00</strong></span>
-            <span>Grand Total: <strong id="calcGrandTotal">INR 0.00</strong></span>
+            <span>Freight: <strong id="calcFreight">INR 7,000.00</strong></span>
+            <span>Taxable: <strong id="calcTaxable">INR 7,000.00</strong></span>
+            <span>Grand Total: <strong id="calcGrandTotal">INR 7,000.00</strong></span>
           </div>
         </fieldset>
 
         <!-- Form Actions -->
         <div class="form-actions">
           <button class="primary-button" id="printButton" type="submit">Generate Invoice (Word &amp; PDF)</button>
-          <button class="secondary-button" id="cancelEditBtnBottom" type="button" style="display:none;">Cancel Edit</button>
           <button class="secondary-button" id="downloadPdfButton" type="button">Download PDF</button>
           <button class="secondary-button" id="downloadDocxButton" type="button">Download Word (.docx)</button>
           <button class="secondary-button" id="printPdfButton" type="button">Print</button>
@@ -193,12 +209,12 @@
         <div id="statusBox" class="status-box" style="display: none;"></div>
       </form>
 
-      <!-- Invoice Management & History Section -->
+      <!-- Invoice History & Saved Records -->
       <section class="history-section">
         <div class="section-heading compact">
           <div>
             <p class="eyebrow">Database &amp; Management</p>
-            <h2>Invoice History &amp; Records</h2>
+            <h2>Saved Invoices &amp; Records</h2>
           </div>
           <div class="history-controls">
             <input type="text" id="historySearchInput" placeholder="🔍 Search invoice / customer..." class="search-input">
@@ -214,15 +230,14 @@
                 <th>Invoice #</th>
                 <th>Date</th>
                 <th>Customer</th>
-                <th>LRs</th>
+                <th>LR #</th>
                 <th>Total (₹)</th>
-                <th>Status</th>
                 <th class="actions-col">Actions</th>
               </tr>
             </thead>
             <tbody id="historyTableBody">
               <tr>
-                <td colspan="7" class="empty-state">Loading invoice history...</td>
+                <td colspan="6" class="empty-state">No saved invoices yet. Generated invoices will appear here.</td>
               </tr>
             </tbody>
           </table>
@@ -276,7 +291,7 @@
           </div>
         </div>
 
-        <!-- Dynamic Multi-Row Table -->
+        <!-- 4-Row Invoice Table matching 11048.docx -->
         <table class="invoice-table">
           <thead>
             <tr>
@@ -300,8 +315,25 @@
               <th></th><th></th><th></th><th></th><th></th>
             </tr>
           </thead>
-          <tbody id="previewTableBody">
-            <!-- Dynamic rows populated by app.js -->
+          <tbody>
+            <tr>
+              <td>1</td>
+              <td id="previewLrNumber">11403</td>
+              <td id="previewLrDate">02-09-2026</td>
+              <td id="previewLoading">Medchal</td>
+              <td id="previewUnloading">Kalakal</td>
+              <td id="previewDescription">Seeds</td>
+              <td id="previewVehicle">AP 28 X 7948</td>
+              <td id="previewPackages">273</td>
+              <td id="previewWeight">10.000</td>
+              <td id="previewRate">700</td>
+              <td id="previewFreight">7,000</td>
+              <td id="previewOtherCharges">0</td>
+              <td id="previewTotal">7,000</td>
+            </tr>
+            <tr><td colspan="13">&nbsp;</td></tr>
+            <tr><td colspan="13">&nbsp;</td></tr>
+            <tr><td colspan="13">&nbsp;</td></tr>
           </tbody>
         </table>
 
@@ -337,6 +369,7 @@
             <b>For SR TRANSPORT</b>
             <div class="signature-stamp-container">
               <img src="stamp.png" alt="SR Transport Stamp" class="signature-stamp-img">
+              <img src="SR-Sign.png" alt="Authorised Signatory" class="signature-sign-img">
             </div>
             <strong>Authorised Signatory</strong>
           </div>
@@ -349,45 +382,6 @@
       </article>
     </section>
   </main>
-
-  <!-- Confirmation Modal -->
-  <div id="confirmModal" class="modal-backdrop" style="display:none;">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3 id="confirmModalTitle">Confirm Invoice Generation</h3>
-        <button type="button" class="modal-close-btn" id="closeConfirmModalBtn">&times;</button>
-      </div>
-      <div class="modal-body" id="confirmModalBody">
-        <!-- Filled dynamically -->
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="secondary-button" id="cancelConfirmBtn">Go Back &amp; Edit</button>
-        <button type="button" class="primary-button" id="executeConfirmBtn">Confirm &amp; Generate</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Read-Only View Modal -->
-  <div id="viewModal" class="modal-backdrop" style="display:none;">
-    <div class="modal-card view-modal-card">
-      <div class="modal-header">
-        <div class="view-header-title">
-          <h3 id="viewModalTitle">Invoice #11048</h3>
-          <span class="status-badge" id="viewModalBadge">Generated</span>
-        </div>
-        <button type="button" class="modal-close-btn" id="closeViewModalBtn">&times;</button>
-      </div>
-      <div class="modal-body" id="viewModalBody">
-        <!-- Rendered dynamically -->
-      </div>
-      <div class="modal-footer view-modal-footer">
-        <button type="button" class="action-btn edit" id="viewModalEditBtn">✏️ Edit / Resubmit</button>
-        <button type="button" class="action-btn word" id="viewModalWordBtn">📄 Download Word (.docx)</button>
-        <button type="button" class="action-btn pdf" id="viewModalPdfBtn">📑 Download PDF</button>
-        <button type="button" class="secondary-button" id="viewModalCloseBtn">Close</button>
-      </div>
-    </div>
-  </div>
 
   <!-- Client-side script libraries -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>

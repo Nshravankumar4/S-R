@@ -525,6 +525,17 @@ label input:focus, label textarea:focus, label select:focus {
 .action-btn.word:hover { background: #dbeafe; }
 .action-btn.pdf { background: #fef2f2; color: #b91c1c; }
 .action-btn.pdf:hover { background: #fee2e2; }
+.action-btn.delete { background: #fef2f2; color: #dc2626; }
+.action-btn.delete:hover { background: #fee2e2; }
+.lr-pill {
+  display: inline-block;
+  background: #f1f5f9;
+  color: #334155;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+}
 
 /* Live Preview Sheet */
 .preview-panel { min-width: 0; }
@@ -668,17 +679,32 @@ label input:focus, label textarea:focus, label select:focus {
   align-items: flex-end;
 }
 .signature-stamp-container {
-  height: 52px;
+  position: relative;
+  height: 54px;
+  width: 145px;
   display: flex;
   align-items: center;
   justify-content: flex-end;
   margin: 1px 0;
 }
 .signature-stamp-img {
-  max-height: 52px;
-  max-width: 95px;
+  position: absolute;
+  left: 6px;
+  top: 0;
+  height: 52px;
+  width: 52px;
   object-fit: contain;
   transform: rotate(-3deg);
+  opacity: 0.92;
+}
+.signature-sign-img {
+  position: absolute;
+  right: 0;
+  top: 8px;
+  height: 38px;
+  width: 95px;
+  object-fit: contain;
+  z-index: 2;
 }
 
 .legal-bottom {
