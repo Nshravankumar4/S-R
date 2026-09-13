@@ -8,73 +8,388 @@
 </head>
 <body>
   <header class="topbar">
-    <div class="brand"><span class="brand-mark">S&amp;R</span><span><strong>S&amp;R TRANSPORT</strong><small>Transport billing studio</small></span></div>
-    <div class="topbar-actions"><span class="status-dot"></span><span>Local workspace</span><button class="ghost-button" id="fillSampleButton" type="button">Fill sample</button><button class="ghost-button" id="clearFormButton" type="button">New invoice</button></div>
+    <div class="brand">
+      <span class="brand-mark">S&amp;R</span>
+      <span>
+        <strong>S&amp;R TRANSPORT</strong>
+        <small>Transport Billing &amp; Invoice Management</small>
+      </span>
+    </div>
+    <div class="topbar-actions">
+      <span class="mode-badge" id="headerModeBadge">Mode: New Invoice</span>
+      <button class="ghost-button" id="fillSampleButton" type="button">Fill Sample</button>
+      <button class="ghost-button" id="clearFormButton" type="button">+ New Invoice</button>
+    </div>
   </header>
 
   <main class="workspace">
     <section class="editor-panel">
-      <div class="section-heading"><div><p class="eyebrow">Invoice desk</p><h1>Create a freight invoice</h1><p class="muted">Fill the trip once. The printable invoice updates as you type.</p></div><span class="draft-badge" id="draftStatus">Draft</span></div>
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Transport Billing Desk</p>
+          <h1 id="editorHeading">Create a Freight Invoice</h1>
+          <p class="muted">Fill trip and LR details. The printable invoice updates live as you type.</p>
+        </div>
+        <div class="heading-badges">
+          <span class="draft-badge" id="draftStatus">New Draft</span>
+          <button type="button" class="cancel-edit-btn" id="cancelEditBtnTop" style="display:none;">Cancel Edit</button>
+        </div>
+      </div>
 
       <div class="quick-chips">
-        <span>⚡ Quick fill:</span>
+        <span>⚡ Quick Fill:</span>
         <button type="button" class="chip-button" id="chipGreenAgro">🌾 Green Agrevolution (Default)</button>
-        <button type="button" class="chip-button" id="chipClear">Clear</button>
+        <button type="button" class="chip-button" id="chipClear">Clear All</button>
       </div>
 
       <form id="invoiceForm" novalidate>
-        <fieldset><legend>Invoice details</legend><div class="form-grid three">
-          <label>Invoice number<input id="invoiceNumber" name="invoiceNumber" inputmode="numeric" placeholder="e.g. 11053" required></label>
-          <label>Invoice date<input id="invoiceDate" name="invoiceDate" type="date" required></label>
-          <label>LR number<input id="lrNumber" name="lrNumber" inputmode="numeric" placeholder="e.g. 11406"></label>
-          <label>LR date<input id="lrDate" name="lrDate" type="date"></label>
-        </div></fieldset>
+        <!-- 1. Invoice Meta Details -->
+        <fieldset>
+          <legend>1. Invoice Details</legend>
+          <div class="form-grid two">
+            <label>
+              Invoice Number <span class="required-star">*</span> <small class="field-hint">(Auto-assigned)</small>
+              <div class="input-with-action">
+                <input id="invoiceNumber" name="invoiceNumber" inputmode="numeric" placeholder="e.g. 11049" readonly required>
+                <button type="button" class="field-action-btn" id="toggleLockInvoiceBtn" title="Auto-assigned next number. Click to edit manually if required.">🔒 Auto</button>
+              </div>
+            </label>
+            <label>
+              Invoice Date <span class="required-star">*</span>
+              <input id="invoiceDate" name="invoiceDate" type="date" required>
+            </label>
+          </div>
+        </fieldset>
 
-        <fieldset><legend>Billed party</legend><div class="form-grid two">
-          <label>Customer / bill to<input id="customerName" name="customerName" placeholder="Customer company name" required></label>
-          <label>GSTIN<input id="customerGstin" name="customerGstin" placeholder="GSTIN (optional)" style="text-transform:uppercase"></label>
-          <label class="span-2">Billing address<textarea id="customerAddress" name="customerAddress" rows="2" placeholder="Full billing address"></textarea></label>
-          <label>State<input id="customerState" name="customerState" placeholder="State"></label>
-          <label>State code<input id="customerStateCode" name="customerStateCode" placeholder="09" style="text-transform:uppercase"></label>
-        </div></fieldset>
+        <!-- 2. Billed Party (Customer) -->
+        <fieldset>
+          <legend>2. Billed Party (Customer)</legend>
+          <div class="form-grid two">
+            <label>
+              Customer / Bill To <span class="required-star">*</span>
+              <input id="customerName" name="customerName" placeholder="e.g. GREEN AGREVOLUTION PRIVATE LTD" required>
+            </label>
+            <label>
+              GSTIN <span class="required-star">*</span>
+              <input id="customerGstin" name="customerGstin" placeholder="e.g. 09AAECG6456H1ZC" style="text-transform:uppercase" required>
+            </label>
+            <label class="span-2">
+              Billing Address <span class="required-star">*</span>
+              <textarea id="customerAddress" name="customerAddress" rows="2" placeholder="Full billing address with Pin Code" required></textarea>
+            </label>
+            <label>
+              State <span class="required-star">*</span>
+              <input id="customerState" name="customerState" placeholder="e.g. UTTAR PRADESH" required>
+            </label>
+            <label>
+              State Code <span class="required-star">*</span>
+              <input id="customerStateCode" name="customerStateCode" placeholder="e.g. 09/UP" style="text-transform:uppercase" required>
+            </label>
+          </div>
+        </fieldset>
 
-        <fieldset><legend>Shipment and vehicle</legend><div class="form-grid two">
-          <label>Consignor<input id="consignor" name="consignor" placeholder="Pickup party (defaults to Customer)"></label>
-          <label>Consignee<input id="consignee" name="consignee" placeholder="Delivery party (defaults to Customer)"></label>
-          <label>Loading location<input id="loadingLocation" name="loadingLocation" placeholder="e.g. Medchal"></label>
-          <label>Unloading location<input id="unloadingLocation" name="unloadingLocation" placeholder="e.g. Kalakal"></label>
-          <label>Vehicle number<input id="vehicleNumber" name="vehicleNumber" placeholder="e.g. AP 28 X 7948" style="text-transform:uppercase"></label>
-          <label>Goods description<input id="goodsDescription" name="goodsDescription" placeholder="e.g. Seeds"></label>
-          <label>No. of bags<input id="packages" name="packages" type="number" min="0" inputmode="numeric" placeholder="273"></label>
-          <label>Weight (kg)<input id="weight" name="weight" type="number" min="0" step="0.001" inputmode="decimal" placeholder="10.000" required></label>
-        </div></fieldset>
+        <!-- 3. Consignor & Consignee Details -->
+        <fieldset>
+          <legend>3. Consignor &amp; Consignee Details</legend>
+          <div class="form-grid two">
+            <label>
+              Consignor Name
+              <input id="consignor" name="consignor" placeholder="Defaults to Customer Name">
+            </label>
+            <label>
+              Consignee Name
+              <input id="consignee" name="consignee" placeholder="Defaults to Customer Name">
+            </label>
+            <label>
+              Consignor Address
+              <input id="consignorAddress" name="consignorAddress" placeholder="Defaults to Customer Address">
+            </label>
+            <label>
+              Consignee Address
+              <input id="consigneeAddress" name="consigneeAddress" placeholder="Defaults to Customer Address">
+            </label>
+            <label>
+              Consignor GSTIN
+              <input id="consignorGstin" name="consignorGstin" placeholder="e.g. 36AAECG6456H1ZF" style="text-transform:uppercase">
+            </label>
+            <label>
+              Consignor / Consignee State Code
+              <input id="consignorStateCode" name="consignorStateCode" placeholder="e.g. 36/TS" style="text-transform:uppercase">
+            </label>
+          </div>
+        </fieldset>
 
-        <fieldset><legend>Charges</legend><div class="form-grid three">
-          <label>Rate (INR)<input id="rate" name="rate" type="number" min="0" step="0.01" inputmode="decimal" placeholder="700" required></label>
-          <label>Other charges (INR)<input id="otherCharges" name="otherCharges" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0"></label>
-          <label>Discount (INR)<input id="discount" name="discount" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0"></label>
-          <label>Tax mode<select id="taxMode" name="taxMode"><option value="none">No tax</option><option value="igst">IGST</option><option value="split">CGST + SGST</option></select></label>
-          <label>Tax rate (%)<input id="taxRate" name="taxRate" type="number" min="0" max="100" step="0.01" inputmode="decimal" placeholder="0"></label>
-          <label>Remarks<input id="remarks" name="remarks" placeholder="Optional note"></label>
-        </div><div class="calculation-strip"><span>Freight <strong id="freightLive">INR 7,000.00</strong></span><span>Taxable <strong id="taxableLive">INR 7,000.00</strong></span><span>Total <strong id="totalLive">INR 7,000.00</strong></span></div></fieldset>
+        <!-- 4. Dynamic Multiple LR Numbers -->
+        <fieldset class="lr-fieldset">
+          <legend>4. Lorry Receipts (LRs) &amp; Trip Details</legend>
+          <div class="lr-toolbar">
+            <div class="lr-count-stepper">
+              <span class="lr-count-label">How many LR Numbers?</span>
+              <div class="stepper-controls">
+                <button type="button" class="stepper-btn" id="decrementLrBtn" title="Remove last LR">-</button>
+                <input type="number" id="lrCountInput" min="1" max="10" value="1" readonly class="stepper-input">
+                <button type="button" class="stepper-btn" id="incrementLrBtn" title="Add another LR">+</button>
+              </div>
+            </div>
+            <button type="button" class="add-lr-btn" id="addLrQuickBtn">+ Add Another LR</button>
+          </div>
 
-        <div class="form-actions"><button class="primary-button" id="printButton" type="submit">Generate Invoice (Word &amp; PDF)</button><button class="secondary-button" id="downloadPdfButton" type="button">Download PDF</button><button class="secondary-button" id="downloadDocxButton" type="button">Download Word (.docx)</button><button class="secondary-button" id="printPdfButton" type="button">Print</button><button class="secondary-button" id="saveButton" type="button">Save draft</button><button class="text-button" id="resetButton" type="button">Reset</button></div>
+          <!-- Dynamic LR Cards Container -->
+          <div id="lrCardsContainer" class="lr-cards-container">
+            <!-- Rendered dynamically by app.js -->
+          </div>
+        </fieldset>
+
+        <!-- 5. Overall Charges & Tax -->
+        <fieldset>
+          <legend>5. Overall Charges &amp; Taxes</legend>
+          <div class="form-grid three">
+            <label>
+              Additional Charges (INR)
+              <input id="overallOtherCharges" name="overallOtherCharges" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0">
+            </label>
+            <label>
+              Discount (INR)
+              <input id="discount" name="discount" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0">
+            </label>
+            <label>
+              Tax Mode
+              <select id="taxMode" name="taxMode">
+                <option value="none">No Tax (GTA RCM Exempted)</option>
+                <option value="igst">IGST</option>
+                <option value="split">CGST + SGST</option>
+              </select>
+            </label>
+            <label>
+              Tax Rate (%)
+              <input id="taxRate" name="taxRate" type="number" min="0" max="100" step="0.01" inputmode="decimal" placeholder="0">
+            </label>
+            <label class="span-2">
+              Remarks / Note
+              <input id="remarks" name="remarks" placeholder="e.g. NA or Goods delivered in good condition">
+            </label>
+          </div>
+
+          <div class="calculation-strip">
+            <span>Total LRs: <strong id="calcLrCount">1</strong></span>
+            <span>Total Weight: <strong id="calcTotalWeight">0.000 MT</strong></span>
+            <span>Freight: <strong id="calcFreight">INR 0.00</strong></span>
+            <span>Taxable: <strong id="calcTaxable">INR 0.00</strong></span>
+            <span>Grand Total: <strong id="calcGrandTotal">INR 0.00</strong></span>
+          </div>
+        </fieldset>
+
+        <!-- Form Actions -->
+        <div class="form-actions">
+          <button class="primary-button" id="printButton" type="submit">Generate Invoice (Word &amp; PDF)</button>
+          <button class="secondary-button" id="cancelEditBtnBottom" type="button" style="display:none;">Cancel Edit</button>
+          <button class="secondary-button" id="downloadPdfButton" type="button">Download PDF</button>
+          <button class="secondary-button" id="downloadDocxButton" type="button">Download Word (.docx)</button>
+          <button class="secondary-button" id="printPdfButton" type="button">Print</button>
+          <button class="secondary-button" id="saveButton" type="button">Save Draft</button>
+          <button class="text-button" id="resetButton" type="button">Reset</button>
+        </div>
+
         <div id="statusBox" class="status-box" style="display: none;"></div>
       </form>
 
-      <section class="history-section"><div class="section-heading compact"><div><p class="eyebrow">Saved locally</p><h2>Recent invoices</h2></div><span class="muted" id="historyCount">0 saved</span></div><div id="historyList" class="history-list"><p class="empty-state">Saved drafts will appear here.</p></div></section>
+      <!-- Invoice Management & History Section -->
+      <section class="history-section">
+        <div class="section-heading compact">
+          <div>
+            <p class="eyebrow">Database &amp; Management</p>
+            <h2>Invoice History &amp; Records</h2>
+          </div>
+          <div class="history-controls">
+            <input type="text" id="historySearchInput" placeholder="🔍 Search invoice / customer..." class="search-input">
+            <button type="button" class="ghost-button" id="refreshHistoryBtn" title="Refresh saved invoices">⟳ Refresh</button>
+            <span class="muted-badge" id="historyCountBadge">0 records</span>
+          </div>
+        </div>
+
+        <div class="history-table-wrapper">
+          <table class="history-table" id="historyTable">
+            <thead>
+              <tr>
+                <th>Invoice #</th>
+                <th>Date</th>
+                <th>Customer</th>
+                <th>LRs</th>
+                <th>Total (₹)</th>
+                <th>Status</th>
+                <th class="actions-col">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="historyTableBody">
+              <tr>
+                <td colspan="7" class="empty-state">Loading invoice history...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
     </section>
 
-    <section class="preview-panel"><div class="preview-toolbar"><span><span class="live-dot"></span>Live preview</span><span class="muted">A4 / landscape</span></div><article class="invoice-sheet" id="invoiceSheet">
-      <div class="invoice-title">FREIGHT INVOICE</div>
-      <div class="company-header"><img src="logo.png" alt="SR Transport" class="company-logo-img"><div><h2>SR TRANSPORT</h2><p>Plot No. 341, Sai Bhagavan Colony, Beeramguda, R.C. Puram, Hyderabad - 502032</p><p><b>Phone No: 9704527762 / 9010578128 / 9966818478 &nbsp;|&nbsp; Email: rudrajagan.b@gmail.com</b></p></div></div>
-      <div class="bill-header"><div><b>M/S. <span id="previewCustomerName">GREEN AGREVOLUTION PRIVATE LTD</span></b><p id="previewCustomerAddress">B-103/104, Gomti Nagar, Vibhuti Khand Gomti Nagar,<br>Lucknow - 226010<br>UTTAR PRADESH</p></div><div><b>GSTIN:</b> <span id="previewCustomerGstin">09AAECG6456H1ZC</span><p><b>STATE:</b> <span id="previewCustomerState">UTTAR PRADESH</span><br><b>STATE CODE:</b> <span id="previewCustomerStateCode">09/UP</span></p></div><div class="invoice-number"><b>INVOICE NO:</b> <span id="previewInvoiceNumber">11048</span><br><b>DATE:</b> <span id="previewInvoiceDate">02-09-2026</span></div></div>
-      <div class="parties"><div><b>CONSIGNOR:</b> <span id="previewConsignor">GREEN AGREVOLUTION PRIVATE LTD</span><p><b>ADDRESS:</b> <span id="previewConsignorAddress">C/O GREEN AGREVOLUTION PVT LTD, Medchal<br>Medchal<br>TELANGANA</span></p><b>GSTIN:</b> <span id="previewConsignorGstin">36AAECG6456H1ZF</span> &nbsp; <b>STATE CODE:</b> 36/TS</div><div><b>CONSIGNEE:</b> <span id="previewConsignee">GREEN AGREVOLUTION PVT LTD</span><p><b>ADDRESS:</b> <span id="previewConsigneeAddress">C/O Green Agrevolution Pvt Ltd, Medchal<br>Medchal<br>TELANGANA</span></p><b>GSTIN:</b> - &nbsp; <b>STATE CODE:</b> 36/TS</div></div>
-      <table class="invoice-table"><thead><tr><th>SL NO:</th><th>LR NO:</th><th>LR DATE</th><th>LOADING</th><th>UN-LOADING</th><th>DESCRIPTION</th><th colspan="2">VEHICLE</th><th>WEIGHT</th><th>RATE</th><th>FREIGHT</th><th>OTHERS</th><th>TOTAL</th></tr><tr class="subhead"><th></th><th></th><th></th><th></th><th></th><th></th><th>NO.</th><th>No: of Bags</th><th></th><th></th><th></th><th></th><th></th></tr></thead><tbody><tr><td>1</td><td id="previewLrNumber">11403</td><td id="previewLrDate">02-09-2026</td><td id="previewLoading">Medchal</td><td id="previewUnloading">Kalakal</td><td id="previewDescription">Seeds</td><td id="previewVehicle">AP 28 X 7948</td><td id="previewPackages">273</td><td id="previewWeight">10.000</td><td id="previewRate">700</td><td id="previewFreight">7,000</td><td id="previewOtherCharges">0</td><td id="previewTotal">7,000</td></tr><tr><td colspan="13"></td></tr><tr><td colspan="13"></td></tr><tr><td colspan="13"></td></tr></tbody></table>
-      <div class="invoice-note-row"><b>Note:</b><span>Others include: <span id="previewRemarks">NA</span></span><b>GRAND TOTAL</b><strong id="previewGrandTotal">₹ 7,000</strong></div><div class="amount-row"><b>Amount Charged(in words):</b><strong id="previewWords">Seven Thousand Rupees</strong></div>
-      <div class="invoice-footer"><div class="legal"><div><b>PAN CARD:</b> ELKPK3812H &nbsp;&nbsp; <b>SAC CODE:</b> 996511</div><div><b>Reg No:</b> SEA/SAN/ALO/PC/0607538/2023 &nbsp; (GTA SERVICES)</div><div>(EXEM_NOTF. 12/2017)</div><div><b>Udyam:</b> UDYAM-TS-25-0001670</div><div style="margin-top:3px;">* Note: GST to be paid by Service Recipient under RCM</div><div>* GST under rcm is not applicable for outward expmted supply</div></div><div class="bank"><b>PLEASE PAY BY RTGS/NEFT</b><p><b>Bank:</b> Kotak Mahindra Bank</p><p><b>A/C NO:</b> 1720252626</p><p><b>Branch:</b> Chandanagar</p><p><b>IFS CODE:</b> KKBK0007489</p></div><div class="signature"><b>For SR TRANSPORT</b><div style="height:35px"></div><strong>Authorised Signatory</strong></div></div><div class="legal-bottom"><div>(Interest @24%p.a will be charged on all outstanding bills)</div><div>E.&amp; O.E &nbsp;&nbsp; (SUBJECT TO SANGAREDDY JURISDICTION) &nbsp;&nbsp; <span>*THIS IS COMPUTER GENERATED BILL</span></div></div>
-    </article></section>
+    <!-- Live Preview Panel -->
+    <section class="preview-panel">
+      <div class="preview-toolbar">
+        <span><span class="live-dot"></span>Live Preview (Matches 11048.docx Master Template)</span>
+        <span class="muted">A4 / Landscape Printable</span>
+      </div>
+
+      <article class="invoice-sheet" id="invoiceSheet">
+        <div class="invoice-title">FREIGHT INVOICE</div>
+        <div class="company-header">
+          <img src="logo.png" alt="SR Transport Logo" class="company-logo-img">
+          <div>
+            <h2>SR TRANSPORT</h2>
+            <p>Plot No. 341, Sai Bhagavan Colony, Beeramguda, R.C. Puram, Hyderabad - 502032</p>
+            <p><b>Phone No: 9704527762 / 9010578128 / 9966818478 &nbsp;|&nbsp; Email: rudrajagan.b@gmail.com</b></p>
+          </div>
+        </div>
+
+        <div class="bill-header">
+          <div>
+            <b>M/S. <span id="previewCustomerName">GREEN AGREVOLUTION PRIVATE LTD</span></b>
+            <p id="previewCustomerAddress">B-103/104, Gomti Nagar, Vibhuti Khand Gomti Nagar,<br>Lucknow - 226010<br>UTTAR PRADESH</p>
+          </div>
+          <div>
+            <b>GSTIN:</b> <span id="previewCustomerGstin">09AAECG6456H1ZC</span>
+            <p><b>STATE:</b> <span id="previewCustomerState">UTTAR PRADESH</span><br><b>STATE CODE:</b> <span id="previewCustomerStateCode">09/UP</span></p>
+          </div>
+          <div class="invoice-number">
+            <b>INVOICE NO:</b> <span id="previewInvoiceNumber">11048</span><br>
+            <b>DATE:</b> <span id="previewInvoiceDate">02-09-2026</span>
+          </div>
+        </div>
+
+        <div class="parties">
+          <div>
+            <b>CONSIGNOR:</b> <span id="previewConsignor">GREEN AGREVOLUTION PRIVATE LTD</span>
+            <p><b>ADDRESS:</b> <span id="previewConsignorAddress">C/O GREEN AGREVOLUTION PVT LTD, Medchal<br>Medchal<br>TELANGANA</span></p>
+            <b>GSTIN:</b> <span id="previewConsignorGstin">36AAECG6456H1ZF</span> &nbsp; <b>STATE CODE:</b> <span id="previewConsignorStateCode">36/TS</span>
+          </div>
+          <div>
+            <b>CONSIGNEE:</b> <span id="previewConsignee">GREEN AGREVOLUTION PVT LTD</span>
+            <p><b>ADDRESS:</b> <span id="previewConsigneeAddress">C/O Green Agrevolution Pvt Ltd, Medchal<br>Medchal<br>TELANGANA</span></p>
+            <b>GSTIN:</b> - &nbsp; <b>STATE CODE:</b> <span id="previewConsigneeStateCode">36/TS</span>
+          </div>
+        </div>
+
+        <!-- Dynamic Multi-Row Table -->
+        <table class="invoice-table">
+          <thead>
+            <tr>
+              <th>SL NO:</th>
+              <th>LR NO:</th>
+              <th>LR DATE</th>
+              <th>LOADING</th>
+              <th>UN-LOADING</th>
+              <th>DESCRIPTION</th>
+              <th colspan="2">VEHICLE</th>
+              <th>WEIGHT</th>
+              <th>RATE</th>
+              <th>FREIGHT</th>
+              <th>OTHERS</th>
+              <th>TOTAL</th>
+            </tr>
+            <tr class="subhead">
+              <th></th><th></th><th></th><th></th><th></th><th></th>
+              <th>NO.</th>
+              <th>No: of Bags</th>
+              <th></th><th></th><th></th><th></th><th></th>
+            </tr>
+          </thead>
+          <tbody id="previewTableBody">
+            <!-- Dynamic rows populated by app.js -->
+          </tbody>
+        </table>
+
+        <div class="invoice-note-row">
+          <b>Note:</b>
+          <span>Others include: <span id="previewRemarks">NA</span></span>
+          <b>GRAND TOTAL</b>
+          <strong id="previewGrandTotal">₹ 7,000</strong>
+        </div>
+
+        <div class="amount-row">
+          <b>Amount Charged (in words):</b>
+          <strong id="previewWords">Rupees Seven Thousand Only</strong>
+        </div>
+
+        <div class="invoice-footer">
+          <div class="legal">
+            <div><b>PAN CARD:</b> ELKPK3812H &nbsp;&nbsp; <b>SAC CODE:</b> 996511</div>
+            <div><b>Reg No:</b> SEA/SAN/ALO/PC/0607538/2023 &nbsp; (GTA SERVICES)</div>
+            <div>(EXEM_NOTF. 12/2017)</div>
+            <div><b>Udyam:</b> UDYAM-TS-25-0001670</div>
+            <div style="margin-top:3px;">* Note: GST to be paid by Service Recipient under RCM</div>
+            <div>* GST under rcm is not applicable for outward expmted supply</div>
+          </div>
+          <div class="bank">
+            <b>PLEASE PAY BY RTGS/NEFT</b>
+            <p><b>Bank:</b> Kotak Mahindra Bank</p>
+            <p><b>A/C NO:</b> 1720252626</p>
+            <p><b>Branch:</b> Chandanagar</p>
+            <p><b>IFS CODE:</b> KKBK0007489</p>
+          </div>
+          <div class="signature">
+            <b>For SR TRANSPORT</b>
+            <div class="signature-stamp-container">
+              <img src="stamp.png" alt="SR Transport Stamp" class="signature-stamp-img">
+            </div>
+            <strong>Authorised Signatory</strong>
+          </div>
+        </div>
+
+        <div class="legal-bottom">
+          <div>(Interest @24%p.a will be charged on all outstanding bills)</div>
+          <div>E.&amp; O.E &nbsp;&nbsp; (SUBJECT TO SANGAREDDY JURISDICTION) &nbsp;&nbsp; <span>*THIS IS COMPUTER GENERATED BILL</span></div>
+        </div>
+      </article>
+    </section>
   </main>
+
+  <!-- Confirmation Modal -->
+  <div id="confirmModal" class="modal-backdrop" style="display:none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="confirmModalTitle">Confirm Invoice Generation</h3>
+        <button type="button" class="modal-close-btn" id="closeConfirmModalBtn">&times;</button>
+      </div>
+      <div class="modal-body" id="confirmModalBody">
+        <!-- Filled dynamically -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="secondary-button" id="cancelConfirmBtn">Go Back &amp; Edit</button>
+        <button type="button" class="primary-button" id="executeConfirmBtn">Confirm &amp; Generate</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Read-Only View Modal -->
+  <div id="viewModal" class="modal-backdrop" style="display:none;">
+    <div class="modal-card view-modal-card">
+      <div class="modal-header">
+        <div class="view-header-title">
+          <h3 id="viewModalTitle">Invoice #11048</h3>
+          <span class="status-badge" id="viewModalBadge">Generated</span>
+        </div>
+        <button type="button" class="modal-close-btn" id="closeViewModalBtn">&times;</button>
+      </div>
+      <div class="modal-body" id="viewModalBody">
+        <!-- Rendered dynamically -->
+      </div>
+      <div class="modal-footer view-modal-footer">
+        <button type="button" class="action-btn edit" id="viewModalEditBtn">✏️ Edit / Resubmit</button>
+        <button type="button" class="action-btn word" id="viewModalWordBtn">📄 Download Word (.docx)</button>
+        <button type="button" class="action-btn pdf" id="viewModalPdfBtn">📑 Download PDF</button>
+        <button type="button" class="secondary-button" id="viewModalCloseBtn">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Client-side script libraries -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>

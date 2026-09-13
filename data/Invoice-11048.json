@@ -1,0 +1,43 @@
+{
+  "invoiceNumber": "11048",
+  "invoiceDate": "2026-09-02",
+  "customerName": "GREEN AGREVOLUTION PRIVATE LTD",
+  "customerGstin": "09AAECG6456H1ZC",
+  "customerAddress": "B-103/104, Gomti Nagar, Vibhuti Khand Gomti Nagar,\nLucknow - 226010 UTTAR PRADESH",
+  "customerState": "UTTAR PRADESH",
+  "customerStateCode": "09/UP",
+  "consignor": "GREEN AGREVOLUTION PRIVATE LTD",
+  "consignorAddress": "C/O GREEN AGREVOLUTION PVT LTD, Medchal",
+  "consignorGstin": "36AAECG6456H1ZF",
+  "consignorStateCode": "36/TS",
+  "consignee": "GREEN AGREVOLUTION PVT LTD",
+  "consigneeAddress": "C/O Green Agrevolution Pvt Ltd, Medchal",
+  "consigneeStateCode": "36/TS",
+  "lrs": [
+    {
+      "sl_no": "1",
+      "lrNumber": "11403",
+      "lrDate": "2026-09-02",
+      "loadingLocation": "Medchal",
+      "unloadingLocation": "Kalakal",
+      "goodsDescription": "Seeds",
+      "vehicleNumber": "AP 28 X 7948",
+      "packages": "273",
+      "weight": "10.000",
+      "rate": "700",
+      "freight": "7,000",
+      "otherCharges": "0",
+      "total": "7,000"
+    }
+  ],
+  "otherCharges": "0",
+  "discount": "0",
+  "taxMode": "none",
+  "taxRate": "0",
+  "remarks": "NA",
+  "grandTotal": "7,000",
+  "amountInWords": "Rupees Seven Thousand Only",
+  "hasDocx": true,
+  "hasPdf": true,
+  "createdAt": "2026-09-02T10:00:00.000Z"
+}
